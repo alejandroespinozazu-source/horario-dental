@@ -1,0 +1,17 @@
+{
+  "name": "Horario Unidad Dental · CESFAM Cienfuegos",
+  "short_name": "Dental Cienfuegos",
+  "description": "Horario semanal y mensual del equipo de la Unidad Dental del CESFAM Prof. Eugenio Cienfuegos.",
+  "lang": "es-CL",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F3F7F7",
+  "theme_color": "#0E7C7B",
+  "icons": [
+    { "src": "icono-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icono-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icono-mascara-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

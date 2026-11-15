@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0E7C7B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Dental Cienfuegos">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icono-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>header { padding-top: calc(12px + env(safe-area-inset-top, 0px)); } main { padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px)); }</style>
+<title>Mi horario · Unidad Dental</title>
+<style>
+  :root {
+    --turq: #1ECECA; --turq-osc: #0E7C7B; --turq-suave: #E9F8F8; --tinta: #1E2B2F; --gris: #55605F;
+    --borde: #D6E2E2; --fondo: #F3F7F7; --blanco: #FFFFFF;
+    --cli: #D2F3F2; --cli-t: #0B4F4E; --apo: #FFF2CC; --apo-t: #6B4E00; --sin: #F4C7C3; --sin-t: #8B1A10;
+    --ges: #DCE3F0; --ges-t: #1F3B63; --col: #EDEDED; --col-t: #404040; --amb: #FFE8C2; --amb-t: #7A4B00;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--fondo); color: var(--tinta); font-family: "Segoe UI", Roboto, Calibri, "Helvetica Neue", Arial, sans-serif; font-size: 15px; }
+  button, input, select { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  .oculto { display: none !important; }
+  .aviso-offline { background: var(--amb); color: var(--amb-t); font-size: 13px; padding: 8px 16px; text-align: center; }
+  .codigo-caja { max-width: 380px; margin: 30px auto; background: var(--blanco); border: 1px solid var(--borde); border-radius: 12px; padding: 18px; }
+  .codigo-caja h3 { margin: 0 0 6px; color: var(--turq-osc); }
+  .codigo-caja p { margin: 0 0 10px; font-size: 14px; color: var(--gris); }
+  .codigo-caja form { display: flex; gap: 8px; }
+  .codigo-caja .btn.prim { background: var(--turq-osc); color: #fff; border: 0; border-radius: 8px; padding: 9px 14px; font-weight: 600; }
+  header { background: var(--blanco); border-bottom: 3px solid var(--turq); padding: 12px 16px 10px; }
+  header .t { font-size: 18px; font-weight: 700; color: var(--turq-osc); }
+  header .s { font-size: 12.5px; color: var(--gris); margin-top: 2px; }
+  .demo { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 10px; background: var(--apo); color: var(--apo-t); font-size: 11px; font-weight: 600; vertical-align: middle; }
+  main { max-width: 1200px; margin: 0 auto; padding: 14px 16px 40px; }
+
+  .controles { background: var(--blanco); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; display: grid; gap: 10px; margin-bottom: 14px; }
+  .controles label { display: block; font-size: 12px; font-weight: 700; color: var(--gris); margin-bottom: 4px; }
+  .control { width: 100%; border: 1px solid var(--borde); border-radius: 8px; padding: 9px 10px; background: var(--blanco); }
+  .control:focus, .btn:focus-visible { outline: 2px solid var(--turq); outline-offset: 1px; }
+  .fila { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .seg { display: inline-flex; border: 1px solid var(--borde); border-radius: 8px; overflow: hidden; }
+  .seg button { border: 0; background: var(--blanco); padding: 8px 16px; font-weight: 600; color: var(--gris); }
+  .seg button.activa { background: var(--turq-osc); color: #fff; }
+  .btn { border: 1px solid var(--borde); background: var(--blanco); border-radius: 8px; padding: 8px 12px; }
+  .btn.icono { width: 40px; padding: 8px 0; font-size: 18px; line-height: 1; }
+  .nav { display: flex; align-items: center; gap: 6px; }
+  .nav h2 { margin: 0; font-size: 17px; flex: 1; text-align: center; text-transform: capitalize; }
+  .aviso-sel { background: var(--blanco); border: 1px dashed var(--borde); border-radius: 10px; padding: 18px; text-align: center; color: var(--gris); }
+
+  /* semana */
+  .semana { display: grid; gap: 10px; }
+  .dia { background: var(--blanco); border: 1px solid var(--borde); border-radius: 10px; overflow: hidden; }
+  .dia.hoy { border: 2px solid var(--turq-osc); }
+  .dia.pasado { opacity: .65; }
+  .dia .cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 12px; background: var(--turq-suave); }
+  .dia .cab b { font-size: 15px; }
+  .badges { display: flex; gap: 5px; flex-wrap: wrap; }
+  .badge { font-size: 11px; font-weight: 700; border-radius: 10px; padding: 2px 8px; }
+  .badge.hoy { background: var(--turq-osc); color: #fff; }
+  .badge.cambio { background: var(--amb); color: var(--amb-t); }
+  .badge.cerrado { background: #D9D9D9; color: #333; }
+  .badge.alerta { background: var(--sin); color: var(--sin-t); }
+  .segmentos { list-style: none; margin: 0; padding: 8px 12px 4px; display: grid; gap: 6px; }
+  .segmentos li { display: grid; grid-template-columns: 98px minmax(0, 1fr); gap: 8px; align-items: start; padding: 6px 8px; border-radius: 6px; font-size: 14px; line-height: 1.3; }
+  .segmentos .h { font-weight: 700; font-size: 12.5px; white-space: nowrap; padding-top: 1px; }
+  .s-cli { background: var(--cli); color: var(--cli-t); }
+  .s-apo { background: var(--apo); color: var(--apo-t); }
+  .s-sin { background: var(--sin); color: var(--sin-t); }
+  .s-ges, .s-adm { background: var(--ges); color: var(--ges-t); }
+  .s-bod { background: #FBE1CC; color: #7A3A0B; }
+  .s-col { background: var(--col); color: var(--col-t); }
+  .s-sola { background: var(--amb); color: var(--amb-t); }
+  .s-dis { background: var(--apo); color: var(--apo-t); }
+  .s-cie { background: #D9D9D9; color: #333; }
+  .dia .pie { padding: 4px 12px 10px; }
+  .link { border: 0; background: none; color: var(--turq-osc); font-weight: 600; padding: 4px 0; text-decoration: underline; }
+
+  /* mes */
+  .mes { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+  .mes .cabm { font-size: 11.5px; font-weight: 700; color: var(--gris); text-transform: uppercase; padding: 0 4px; }
+  .celda { background: var(--blanco); border: 1px solid var(--borde); border-radius: 8px; min-height: 92px; padding: 6px 7px; text-align: left; display: flex; flex-direction: column; gap: 4px; }
+  .celda.vacia { background: transparent; border-style: dashed; }
+  .celda.hoy { border: 2px solid var(--turq-osc); }
+  .celda.pasado { opacity: .62; }
+  .celda .n { font-weight: 700; display: flex; justify-content: space-between; }
+  .celda .r { font-size: 12px; line-height: 1.3; border-radius: 4px; padding: 3px 5px; }
+  .celda .marca { margin-top: auto; }
+  @media (max-width: 640px) {
+    .mes { grid-template-columns: minmax(0, 1fr); }
+    .mes .cabm, .celda.vacia { display: none; }
+    .celda { min-height: 0; flex-direction: row; flex-wrap: wrap; align-items: center; }
+    .celda .n { width: 72px; }
+    .celda .r { flex: 1 1 160px; }
+    .celda .marca { margin: 0; }
+  }
+  @media (min-width: 980px) {
+    .controles { grid-template-columns: 1.2fr auto 1.4fr 0.9fr; align-items: end; }
+    .semana { grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: start; }
+    .semana.seis { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    .segmentos li { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  }
+
+  /* detalle del día */
+  .modal { position: fixed; inset: 0; background: rgba(20, 35, 38, .45); z-index: 50; display: flex; align-items: flex-start; justify-content: center; padding: 16px 8px; overflow-y: auto; }
+  .caja { background: var(--fondo); border-radius: 12px; width: min(1100px, 100%); padding: 14px; }
+  .caja .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+  .caja h3 { margin: 0; font-size: 18px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0 10px; }
+  .chip { display: inline-block; border-radius: 4px; padding: 2px 7px; font-size: 12px; font-weight: 600; }
+  .grid-wrap { overflow-x: auto; margin-top: 10px; }
+  table.grilla { border-collapse: separate; border-spacing: 3px; width: 100%; min-width: 640px; table-layout: fixed; font-size: 12.5px; }
+  table.grilla th { background: var(--turq-osc); color: #fff; padding: 6px; border-radius: 4px; }
+  table.grilla th small { display: block; font-weight: 500; }
+  table.grilla th.hora { width: 100px; }
+  table.grilla th.fuera { background: #6B7A7A; }
+  table.grilla td { border-radius: 4px; padding: 5px 6px; text-align: center; vertical-align: middle; line-height: 1.3; height: 32px; }
+  table.grilla td.hora { background: var(--turq-suave); color: var(--gris); font-weight: 700; white-space: nowrap; font-size: 12px; }
+  td.cli { background: var(--cli); color: var(--cli-t); } td.apo { background: var(--apo); color: var(--apo-t); }
+  td.sin { background: var(--sin); color: var(--sin-t); } td.ges { background: var(--ges); color: var(--ges-t); }
+  td.col { background: var(--col); color: var(--col-t); } td.fh { background: #F7F7F7; color: #9A9A9A; } td.cie { background: #D9D9D9; color: #333; }
+  td.fuera { background: #FAFBFB; border: 1px solid #E7EDED; text-align: left; font-size: 12px; }
+  td .l1 { font-weight: 700; }
+  .nota { font-size: 12.5px; color: var(--gris); }
+  #cargando { position: fixed; inset: 0; background: rgba(243,247,247,.8); display: flex; align-items: center; justify-content: center; z-index: 90; font-weight: 600; color: var(--turq-osc); }
+  .error { background: #FCEDEB; color: var(--sin-t); border-radius: 8px; padding: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="t">Mi horario<span id="marcaDemo" class="demo oculto">Vista previa con datos de ejemplo</span></div>
+  <div class="s">Unidad Dental · CESFAM Prof. Eugenio Cienfuegos</div>
+</header>
+<div id="avisoOffline" class="aviso-offline oculto"></div>
+<main>
+  <div class="controles">
+    <div><label for="persona">Mi nombre</label><select id="persona" class="control"></select></div>
+    <div><label>Ver</label><div class="seg" id="modo"><button type="button" data-m="semana" class="activa">Semana</button><button type="button" data-m="mes">Mes</button></div></div>
+    <div><label>&nbsp;</label><div class="nav"><button class="btn icono" id="ant" aria-label="Anterior">‹</button><h2 id="titulo"></h2><button class="btn icono" id="sig" aria-label="Siguiente">›</button><button class="btn" id="hoy">Hoy</button></div></div>
+    <div><label for="irFecha">Ir a un día</label><input type="date" id="irFecha" class="control"></div>
+  </div>
+  <div id="vista"></div>
+</main>
+<div class="modal oculto" id="modal"><div class="caja" id="caja"></div></div>
+<div id="cargando">Cargando horario…</div>
+
+<script>
+/* Motor de cobertura de la Unidad Dental.
+   Aplica los eventos sobre el horario estándar, reasigna TONS libres y genera las alertas.
+   No depende del servidor: recibe los datos ya leídos de la planilla. */
+var Motor = (function () {
+  'use strict';
+
+  var TIPOS = {"Feriado legal (vacaciones)": {"efecto": "AUS", "fondo": "#DFF0D8", "texto": "#2E5E1E", "grupo": "Ausencia"}, "Permiso administrativo": {"efecto": "AUS", "fondo": "#D7F0F7", "texto": "#0B5567", "grupo": "Ausencia"}, "Licencia médica": {"efecto": "AUS", "fondo": "#FBE3EC", "texto": "#8A1846", "grupo": "Ausencia"}, "Capacitación": {"efecto": "AUS", "fondo": "#E4E7F6", "texto": "#2C3A8C", "grupo": "Ausencia"}, "Devolución de horas": {"efecto": "AUS", "fondo": "#F3EBD9", "texto": "#6A4B12", "grupo": "Ausencia"}, "Reunión / comité": {"efecto": "REU", "fondo": "#ECE2F5", "texto": "#4E2A72", "grupo": "Actividad"}, "Censo / bloqueo de agenda": {"efecto": "BLQ", "fondo": "#E3E8EF", "texto": "#2F3E52", "grupo": "Actividad"}, "Bodega / inventario": {"efecto": "BOD", "fondo": "#FBE1CC", "texto": "#7A3A0B", "grupo": "Actividad"}, "Otra actividad no clínica": {"efecto": "OTR", "fondo": "#ECECEC", "texto": "#444444", "grupo": "Actividad"}, "Cobertura manual": {"efecto": "COB", "fondo": "#FFF2CC", "texto": "#6B4E00", "grupo": "Cobertura"}, "Reemplazo": {"efecto": "REE", "fondo": "#F6E1F3", "texto": "#6E2063", "grupo": "Cobertura"}, "Permiso con devolución de horas": {"efecto": "AUS", "fondo": "#E6F0FA", "texto": "#1B4F80", "grupo": "Honorarios (PRAPS)", "devuelveCon": "Recuperación de horas"}, "Recuperación de horas": {"efecto": "EXT", "fondo": "#DDF3E6", "texto": "#1E6B3A", "grupo": "Honorarios (PRAPS)"}, "Permiso sin devolución (pedir reemplazo)": {"efecto": "AUS", "fondo": "#FBE7DA", "texto": "#8A3B12", "grupo": "Honorarios (PRAPS)", "pideReemplazo": true}, "Feriado nacional / cierre": {"efecto": "CIE", "fondo": "#D9D9D9", "texto": "#333333", "grupo": "Cierre"}, "Ausencia": {"efecto": "AUS", "fondo": "#E7E9EC", "texto": "#3B4450", "grupo": "Oculto"}};
+  var ACT = {
+    'Clínica': 'CLI', 'Gestión': 'GES', 'Administrativo': 'ADM', 'Bodega': 'BOD',
+    'Colación': 'COL', 'Disponible (apoyo)': 'DIS', 'Fuera de jornada': 'FUE'
+  };
+  var ETIQUETA = {
+    CLI: 'clínica', GES: 'gestión', ADM: 'administrativo', BOD: 'bodega',
+    COL: 'colación', DIS: 'disponible', FUE: 'fuera de jornada'
+  };
+  var REPETICIONES = [{"valor": "", "n": null}, {"valor": "1.ª semana del mes", "n": 1}, {"valor": "2.ª semana del mes", "n": 2}, {"valor": "3.ª semana del mes", "n": 3}, {"valor": "4.ª semana del mes", "n": 4}, {"valor": "Última semana del mes", "n": "L"}];
+  var DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+  var ORDINAL = { 1: 'primer', 2: 'segundo', 3: 'tercer', 4: 'cuarto', L: 'último' };
+  var HORAS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]; // bloques de 08:00 a 20:00 (horario diurno y vespertino)
+  var DIAS_ATENCION = 6; // lunes a sábado
+  var TODOS = 'Todo el equipo';
+  var ROL_ODONTO = 'Odontólogo/a';
+  var ROL_TONS = 'TONS';
+  var ROL_APOYO = 'TONS de apoyo';
+
+  /* ---------- fechas ---------- */
+  function aFecha(s) { var p = String(s).split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function dos(n) { return (n < 10 ? '0' : '') + n; }
+  function aTexto(d) { return d.getFullYear() + '-' + dos(d.getMonth() + 1) + '-' + dos(d.getDate()); }
+  function diaSemana(d) { return (d.getDay() + 6) % 7; } // 0 = lunes
+  function semanaDelMes(d) { return Math.floor((d.getDate() - 1) / 7) + 1; }
+  function esUltimo(d) { var n = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 7); return n.getMonth() !== d.getMonth(); }
+  function hora(s) {
+    if (s === null || s === undefined || s === '') return null;
+    var p = String(s).split(':');
+    return +p[0] + (+(p[1] || 0)) / 60;
+  }
+  function hhmm(h) { return dos(Math.floor(h)) + ':' + dos(Math.round((h % 1) * 60)); }
+  function rango(a, b) { return hhmm(a) + '–' + hhmm(b); }
+
+  function codigoRepeticion(v) {
+    for (var i = 0; i < REPETICIONES.length; i++) if (REPETICIONES[i].valor === v) return REPETICIONES[i].n;
+    return null;
+  }
+  function textoRepeticion(ev) {
+    var n = codigoRepeticion(ev.rep);
+    if (!n || !ev.desde) return 'No se repite';
+    return 'Cada mes, ' + ORDINAL[n] + ' ' + DIAS[diaSemana(aFecha(ev.desde))].toLowerCase();
+  }
+
+  function eventoEnFecha(ev, f) {
+    if (!ev.desde) return false;
+    if (ev.excepciones && ev.excepciones.indexOf(f) >= 0) return false;
+    var n = codigoRepeticion(ev.rep);
+    if (!n) {
+      var hasta = ev.hasta && ev.hasta >= ev.desde ? ev.hasta : ev.desde;
+      return f >= ev.desde && f <= hasta;
+    }
+    if (f < ev.desde) return false;
+    if (ev.repHasta && f > ev.repHasta) return false;
+    var d = aFecha(f), d0 = aFecha(ev.desde);
+    if (diaSemana(d) !== diaSemana(d0)) return false;
+    return n === 'L' ? esUltimo(d) : semanaDelMes(d) === n;
+  }
+  function eventoEnHora(ev, h) {
+    var a = hora(ev.hIni), b = hora(ev.hFin);
+    if (a === null || b === null) return true;
+    return h + 1 > a && h < b;
+  }
+  function jornadaCompleta(ev) { return hora(ev.hIni) === null || hora(ev.hFin) === null; }
+  function afectaA(ev, nombre) {
+    var ps = ev.personas || [];
+    return ps.indexOf(TODOS) >= 0 || ps.indexOf(nombre) >= 0;
+  }
+
+  /* Fechas de atención (lunes a sábado) en que aplica un evento, con un tope razonable. */
+  function fechasDeEvento(ev, tope) {
+    var todas = fechasSinExcepciones(ev, tope);
+    var ex = ev.excepciones || [];
+    return ex.length ? todas.filter(function (f) { return ex.indexOf(f) < 0; }) : todas;
+  }
+  function fechasSinExcepciones(ev, tope) {
+    tope = tope || 400;
+    var out = [];
+    if (!ev.desde) return out;
+    var n = codigoRepeticion(ev.rep);
+    if (!n) {
+      var d = aFecha(ev.desde), fin = ev.hasta && ev.hasta >= ev.desde ? ev.hasta : ev.desde;
+      for (var i = 0; i < tope; i++) {
+        var f = aTexto(d);
+        if (f > fin) break;
+        if (diaSemana(d) < DIAS_ATENCION) out.push(f);
+        d.setDate(d.getDate() + 1);
+      }
+      return out;
+    }
+    var d0 = aFecha(ev.desde), wd = diaSemana(d0);
+    for (var m = 0; m < 13; m++) {
+      var base = new Date(d0.getFullYear(), d0.getMonth() + m, 1);
+      var cands = [];
+      for (var k = 1; k <= 31; k++) {
+        var x = new Date(base.getFullYear(), base.getMonth(), k);
+        if (x.getMonth() !== base.getMonth()) break;
+        if (diaSemana(x) === wd) cands.push(x);
+      }
+      var elegido = n === 'L' ? cands[cands.length - 1] : cands[n - 1];
+      if (!elegido) continue;
+      var fx = aTexto(elegido);
+      if (fx < ev.desde) continue;
+      if (ev.repHasta && fx > ev.repHasta) break;
+      out.push(fx);
+    }
+    return out;
+  }
+
+  /* ---------- personas ---------- */
+  function indexar(datos) {
+    var activos = (datos.personal || []).filter(function (p) { return p.nombre && p.activo !== false; });
+    var porNombre = {};
+    activos.forEach(function (p) { porNombre[p.nombre] = p; });
+    var odonto = activos.filter(function (p) { return p.rol === ROL_ODONTO; });
+    odonto = odonto.map(function (p, i) { return { p: p, i: i }; }).sort(function (a, b) {
+      return String(a.p.box || '~').localeCompare(String(b.p.box || '~'), 'es', { numeric: true }) || a.i - b.i;
+    }).map(function (x) { return x.p; });
+    var tons = activos.filter(function (p) { return p.rol === ROL_TONS; });
+    var apoyo = activos.filter(function (p) { return p.rol === ROL_APOYO; });
+    // Un odontólogo/a puede tener más de una dupla habitual (por ejemplo, una distinta el sábado): "A / B".
+    var duplas = {}, duenos = {}, duplaDe = {};
+    odonto.forEach(function (o) {
+      duplas[o.nombre] = listaDuplas(o.dupla);
+      duplas[o.nombre].forEach(function (t) {
+        (duenos[t] = duenos[t] || []).push(o.nombre);
+        if (!duplaDe[t]) duplaDe[t] = o.nombre;
+      });
+    });
+    // Para formar duplas se usan las TONS y también las TONS de apoyo en sus horas clínicas.
+    var tonsTodas = tons.concat(apoyo);
+    return { activos: activos, porNombre: porNombre, odonto: odonto, tons: tons, apoyo: apoyo, tonsTodas: tonsTodas,
+             duplas: duplas, duenos: duenos, duplaDe: duplaDe };
+  }
+  /* Box de un odontólogo/a en un día y hora. El campo Box acepta excepciones separadas por punto y coma,
+     por ejemplo "Box 12; Viernes 14-16 Box 11" (el viernes de 14:00 a 16:00 usa el Box 11). */
+  var cacheBox = {};
+  function leerBox(txt) {
+    txt = String(txt || '');
+    if (cacheBox[txt]) return cacheBox[txt];
+    var partes = txt.split(';').map(function (x) { return x.trim(); }).filter(String);
+    var r = { base: partes[0] || '', excepciones: [] };
+    partes.slice(1).forEach(function (x) {
+      var m = x.match(/^(\S+)\s+(\d{1,2})(?::00)?\s*(?:-|–|a)\s*(\d{1,2})(?::00)?\s*:?\s*(.+)$/i);
+      if (!m) return;
+      var dia = DIAS.filter(function (d) { return norm(d) === norm(m[1]); })[0];
+      if (dia) r.excepciones.push({ dia: DIAS.indexOf(dia), desde: +m[2], hasta: +m[3], box: m[4].trim() });
+    });
+    return (cacheBox[txt] = r);
+  }
+  function norm(s) { return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+  function boxEn(p, diaIdx, h) {
+    var b = leerBox(p && p.box);
+    for (var i = 0; i < b.excepciones.length; i++) {
+      var x = b.excepciones[i];
+      if (x.dia === diaIdx && h >= x.desde && h < x.hasta) return x.box;
+    }
+    return b.base;
+  }
+  /* Personas con contrato por un período (por ejemplo, duplas PRAPS a honorarios de marzo a diciembre). */
+  function vigente(p, fecha) { return (!p.vigDesde || fecha >= p.vigDesde) && (!p.vigHasta || fecha <= p.vigHasta); }
+  /* Sigue en el equipo (o llegará) a partir de una fecha: su vigencia no ha terminado. */
+  function actual(p, fecha) { return !p.vigHasta || p.vigHasta >= fecha; }
+  function listaDuplas(txt) { return String(txt || '').split(/\s*[\/;]\s*/).map(function (x) { return x.trim(); }).filter(String); }
+  /* Dupla o dueño que corresponde en una hora: el primero que está programado (no "fuera de jornada"). */
+  function programado(lista, st) {
+    lista = lista || [];
+    for (var i = 0; i < lista.length; i++) if (st[lista[i]] && st[lista[i]].base !== 'FUE') return lista[i];
+    return lista[0] || '';
+  }
+  function duplaEn(ix, nombre, st) { return programado(ix.duplas[nombre], st); }
+  function duenoEn(ix, tons, st) { return programado(ix.duenos[tons], st); }
+  function corto(ix, nombre) { var p = ix.porNombre[nombre]; return p && p.corto ? p.corto : nombre; }
+  /* Nombre que se muestra en una hora: el de quien reemplaza, si hay un reemplazo registrado. */
+  function visible(ix, st, nombre) { return st && st[nombre] && st[nombre].reemplazo ? st[nombre].reemplazo : corto(ix, nombre); }
+
+  /* ---------- cálculo de un día ---------- */
+  function calcularBase(fecha, diaIdx, datos, eventos, ix, sinVigencia) {
+    var dia = DIAS[diaIdx];
+    var est = datos.estandar || {};
+    var horas = [];
+    var previo = {};
+
+    HORAS.forEach(function (h, i) {
+      var st = {};
+      ix.activos.forEach(function (p) {
+        var valor = ((est[p.nombre] || {})[dia] || [])[i] || 'Fuera de jornada';
+        if (!sinVigencia && !vigente(p, fecha)) valor = 'Fuera de jornada';
+        var a = { act: ACT[valor] || 'FUE', etiqueta: ETIQUETA[ACT[valor] || 'FUE'], evento: null, base: ACT[valor] || 'FUE' };
+        // Recuperación de horas: atiende en un horario que no es el suyo (en su box y con su dupla).
+        eventos.forEach(function (e) {
+          var t = TIPOS[e.tipo];
+          if (!t || t.efecto !== 'EXT' || !eventoEnHora(e, h) || !afectaA(e, p.nombre)) return;
+          if (a.base !== 'FUE' || (!sinVigencia && !vigente(p, fecha))) return;
+          a.base = 'CLI'; a.act = 'CLI'; a.evento = e; a.recupera = true; a.etiqueta = e.obs || e.tipo;
+        });
+        eventos.forEach(function (e) {
+          var t = TIPOS[e.tipo];
+          if (!t || t.efecto === 'COB' || t.efecto === 'REE' || t.efecto === 'EXT' || !eventoEnHora(e, h) || !afectaA(e, p.nombre)) return;
+          if (a.base === 'FUE') return;
+          if (a.base === 'COL' && jornadaCompleta(e) && t.efecto !== 'AUS' && t.efecto !== 'CIE') return;
+          a.act = t.efecto;
+          a.evento = e;
+          a.etiqueta = e.obs || e.tipo;
+        });
+        // Reemplazo: otra persona cumple el horario estándar de quien está ausente.
+        eventos.forEach(function (e) {
+          var t = TIPOS[e.tipo];
+          if (!t || t.efecto !== 'REE' || !e.acompanaA || !eventoEnHora(e, h) || !afectaA(e, p.nombre)) return;
+          if (a.base === 'FUE') return;
+          a.act = a.base; a.evento = null; a.etiqueta = ETIQUETA[a.base]; a.reemplazo = e.acompanaA;
+        });
+        st[p.nombre] = a;
+      });
+
+      var clinicos = ix.odonto.filter(function (o) { return st[o.nombre].act === 'CLI'; });
+      var libre = function (t) { var x = st[t.nombre].act; return x === 'CLI' || x === 'ADM'; };
+      var pool = ix.tonsTodas.filter(libre);
+      var enPool = {}; pool.forEach(function (t) { enPool[t.nombre] = true; });
+      var asig = {}, usado = {};
+
+      // 1) coberturas manuales registradas
+      eventos.forEach(function (e) {
+        var t = TIPOS[e.tipo];
+        if (!t || t.efecto !== 'COB' || !eventoEnHora(e, h)) return;
+        var d = e.acompanaA;
+        if (!d || !st[d] || st[d].act !== 'CLI' || asig[d]) return;
+        (e.personas || []).some(function (n) {
+          var esApoyo = ix.apoyo.some(function (a) { return a.nombre === n; }) && st[n] && st[n].act === 'DIS';
+          if ((enPool[n] || esApoyo) && !usado[n]) { asig[d] = { tons: n, tipo: 'manual' }; usado[n] = true; return true; }
+          return false;
+        });
+      });
+      // 2) duplas habituales
+      clinicos.forEach(function (o) {
+        if (asig[o.nombre]) return;
+        ix.duplas[o.nombre].some(function (t) {
+          if (enPool[t] && !usado[t]) { asig[o.nombre] = { tons: t, tipo: 'dupla' }; usado[t] = true; return true; }
+          return false;
+        });
+      });
+      // 3) cobertura automática con TONS libres: primero se mantiene a quien ya acompañaba en la hora anterior
+      clinicos.forEach(function (o) {
+        var prev = previo[o.nombre];
+        if (asig[o.nombre] || !prev || usado[prev] || !enPool[prev]) return;
+        asig[o.nombre] = { tons: prev, tipo: 'cobertura' };
+        usado[prev] = true;
+      });
+      clinicos.forEach(function (o) {
+        if (asig[o.nombre]) return;
+        var cands = pool.filter(function (t) { return !usado[t.nombre]; });
+        if (!cands.length) return;
+        var elegido = null;
+        if (!elegido) {
+          cands.sort(function (a, b) {
+            var pa = st[a.nombre].act === 'CLI' ? 0 : 1, pb = st[b.nombre].act === 'CLI' ? 0 : 1;
+            return pa - pb;
+          });
+          elegido = cands[0];
+        }
+        asig[o.nombre] = { tons: elegido.nombre, tipo: 'cobertura' };
+        usado[elegido.nombre] = true;
+      });
+      // Se recuerda la última TONS de cada odontólogo aunque haya una pausa (por ejemplo, la colación).
+      Object.keys(asig).forEach(function (d) { previo[d] = asig[d].tons; });
+
+      horas.push({ h: h, st: st, asig: asig, usado: usado, clinicos: clinicos });
+    });
+    return horas;
+  }
+
+  function textoPersona(ix, n, a) { return (a.reemplazo || corto(ix, n)) + ' · ' + a.etiqueta; }
+
+  function construirDia(fecha, datos, eventosDia, opciones) {
+    opciones = opciones || {};
+    var ix = indexar(datos);
+    var d = aFecha(fecha), wd = diaSemana(d);
+    var res = { fecha: fecha, dia: DIAS[wd], diaIdx: wd, finDeSemana: wd >= DIAS_ATENCION, eventos: eventosDia, horas: [], alertas: [], cerrado: false,
+                conteo: { sinTons: 0, cobertura: 0, tonsSola: 0, sinDupla: 0 }, apoyo: [], columnas: [] };
+    if (wd >= DIAS_ATENCION) return res;
+
+    var horas = calcularBase(fecha, wd, datos, eventosDia, ix, opciones.sinVigencia);
+    var estandar = opciones.estandar || null;
+
+    // Columnas por box: en un mismo box pueden atender distintos odontólogos/as según la hora (diurno y vespertino),
+    // y un odontólogo/a puede cambiar de box en algunas horas (excepciones del campo Box).
+    var boxDe = function (o, h) { return boxEn(o, wd, h) || o.nombre; };
+    var porBox = [], idxBox = {};
+    var agregarBox = function (k) { if (idxBox[k] === undefined) { idxBox[k] = porBox.length; porBox.push({ box: k, miembros: [], programados: [] }); } return porBox[idxBox[k]]; };
+    ix.odonto.forEach(function (o) { agregarBox(boxDe(o, HORAS[0])).miembros.push(o); });
+    horas.forEach(function (H) {
+      ix.odonto.forEach(function (o) {
+        if (H.st[o.nombre].base === 'FUE') return;
+        var c = agregarBox(boxDe(o, H.h));
+        if (c.programados.indexOf(o) < 0) c.programados.push(o);
+      });
+    });
+    porBox.sort(function (a, b) { return String(a.box).localeCompare(String(b.box), 'es', { numeric: true }); });
+    var columnas = porBox.filter(function (c) { return c.programados.length; });
+    if (!columnas.length) columnas = porBox.filter(function (c) { return c.miembros.length; });
+    res.columnas = columnas.map(function (c) {
+      var nombres = c.programados.map(function (o) {
+        var H = horas.filter(function (x) { return x.st[o.nombre].base !== 'FUE'; })[0];
+        return visible(ix, H ? H.st : null, o.nombre);
+      });
+      return { box: c.box, nombres: nombres };
+    });
+    // Quiénes atienden en un box a una hora: los que tienen ese box a esa hora; primero los que están en clínica.
+    var enElBox = function (c, st, h) {
+      return ix.odonto.filter(function (o) { return boxDe(o, h) === c.box && st[o.nombre].base !== 'FUE'; })
+        .sort(function (a, b) { return (st[a.nombre].act === 'CLI' ? 0 : 1) - (st[b.nombre].act === 'CLI' ? 0 : 1); });
+    };
+    var quienEnBox = function (c, st, h) {
+      return enElBox(c, st, h)[0] || c.miembros[0] || c.programados[0];
+    };
+    var cerradoHoras = 0, hayCierre = false;
+    var porHora = [];
+
+    horas.forEach(function (H, i) {
+      var h = H.h, st = H.st, asig = H.asig;
+      var cerrado = ix.activos.length > 0 && ix.activos.every(function (p) { return st[p.nombre].act === 'CIE' || st[p.nombre].base === 'FUE'; }) &&
+                    ix.activos.some(function (p) { return st[p.nombre].act === 'CIE'; });
+      var libreHora = ix.activos.every(function (p) { return st[p.nombre].act === 'CIE' || st[p.nombre].base === 'FUE'; });
+      if (cerrado || libreHora) cerradoHoras++;
+      if (cerrado) hayCierre = true;
+
+      var boxHora = {};
+      ix.odonto.forEach(function (o) { boxHora[o.nombre] = boxDe(o, h); });
+      var boxes = columnas.map(function (col) {
+        var o = quienEnBox(col, st, h), a = st[o.nombre], c;
+        if (boxHora[o.nombre] !== col.box) return { clase: 'fh', texto: 'Fuera de horario' };
+        if (a.act === 'CLI') {
+          var x = asig[o.nombre];
+          if (x) c = { clase: x.tipo === 'dupla' ? 'cli' : 'apo', texto: visible(ix, st, o.nombre) + '\n' + visible(ix, st, x.tons) + (x.tipo === 'dupla' ? '' : ' (cobertura)') };
+          else c = { clase: 'sin', texto: visible(ix, st, o.nombre) + '\nSIN TONS' };
+        } else if (a.act === 'GES') c = { clase: 'ges', texto: 'Box libre\nGestión' };
+        else if (a.act === 'COL') c = { clase: 'col', texto: 'Colación' };
+        else if (a.act === 'FUE') c = { clase: 'fh', texto: 'Fuera de horario' };
+        else if (a.act === 'CIE') c = { clase: 'cie', texto: a.etiqueta };
+        else c = { clase: 'ev', tipo: a.evento ? a.evento.tipo : '', texto: 'Sin atención\n' + a.etiqueta };
+        return c;
+      });
+
+      var fuera = [];
+      var enBox = {};
+      columnas.forEach(function (col) { var o = quienEnBox(col, st, h); if (o && boxHora[o.nombre] === col.box) enBox[o.nombre] = true; });
+      // Dos odontólogos/as en clínica en el mismo box a la misma hora (por ejemplo, una recuperación de horas mal ubicada).
+      var ocupados = columnas.map(function (col) {
+        var cl = enElBox(col, st, h).filter(function (o) { return st[o.nombre].act === 'CLI'; });
+        return cl.length > 1 ? { box: col.box, nombres: cl.map(function (o) { return visible(ix, st, o.nombre); }) } : null;
+      }).filter(Boolean);
+      ix.odonto.concat(ix.tonsTodas).forEach(function (p) {
+        var a = st[p.nombre];
+        if (['COL', 'FUE', 'CIE'].indexOf(a.act) >= 0) return;
+        if (p.rol === ROL_ODONTO && a.act === 'CLI' && enBox[p.nombre]) return;
+        if (p.rol !== ROL_ODONTO && H.usado[p.nombre]) return;
+        if (p.rol === ROL_APOYO && a.act === 'DIS') return; // sus horas de apoyo se muestran aparte
+        var etq = a.act === 'CLI' ? (p.rol === ROL_ODONTO ? 'clínica, ' + (boxHora[p.nombre] || 'box') + ' ocupado' : 'sin odontólogo') : a.etiqueta;
+        fuera.push({ texto: visible(ix, st, p.nombre) + ' · ' + etq, tipo: a.evento ? a.evento.tipo : '', clase: a.evento ? 'ev' : (a.act === 'CLI' ? 'sola' : a.act.toLowerCase()) });
+      });
+
+      var apoyoDisp = ix.apoyo.filter(function (p) { return st[p.nombre].act === 'DIS' && !H.usado[p.nombre]; }).map(function (p) { return p.nombre; });
+      porHora.push({ h: h, boxes: boxes, fuera: fuera, apoyo: apoyoDisp, cerrado: cerrado, box: boxHora, ocupados: ocupados,
+                     asig: asig, st: st, duplasAtendiendo: Object.keys(asig).length });
+    });
+
+    res.cerrado = hayCierre && cerradoHoras === HORAS.length;
+    res.horas = porHora;
+
+    // alertas por hora
+    // Primero se mide cuánto de su jornada queda sin dupla cada persona: si es toda la jornada se sugiere
+    // pedir reemplazo del cargo; si es solo una parte, bloquear ese período o alivianar la agenda.
+    var horasClin = {}, horasSin = {}, horasCliT = {}, horasSola = {}, horasProg = {}, horasAus = {}, progH = {}, ausH = {};
+    var tonsUsada = function (P, n) { return Object.keys(P.asig).some(function (k) { return P.asig[k].tons === n; }); };
+    porHora.forEach(function (P) {
+      if (P.cerrado) return;
+      ix.odonto.concat(ix.tonsTodas).forEach(function (p) {
+        var a = P.st[p.nombre];
+        if (a.base === 'FUE' || a.base === 'COL') return;
+        horasProg[p.nombre] = (horasProg[p.nombre] || 0) + 1;
+        (progH[p.nombre] = progH[p.nombre] || {})[P.h] = true;
+        if (['AUS', 'REU', 'BLQ', 'BOD', 'OTR'].indexOf(a.act) >= 0) {
+          horasAus[p.nombre] = (horasAus[p.nombre] || 0) + 1;
+          if (a.act !== a.base) (ausH[p.nombre] = ausH[p.nombre] || {})[P.h] = true; // ausencia por un evento, no por su horario
+        }
+      });
+      ix.odonto.forEach(function (o) {
+        if (P.st[o.nombre].act !== 'CLI') return;
+        horasClin[o.nombre] = (horasClin[o.nombre] || 0) + 1;
+        if (!P.asig[o.nombre]) horasSin[o.nombre] = (horasSin[o.nombre] || 0) + 1;
+      });
+      ix.tonsTodas.forEach(function (t) {
+        if (P.st[t.nombre].act !== 'CLI') return;
+        horasCliT[t.nombre] = (horasCliT[t.nombre] || 0) + 1;
+        if (!tonsUsada(P, t.nombre)) horasSola[t.nombre] = (horasSola[t.nombre] || 0) + 1;
+      });
+    });
+    // Ausente toda la jornada: todas sus horas programadas están ocupadas por una ausencia o actividad fuera del box.
+    var ausenteTodo = function (n) { return !!n && horasProg[n] > 0 && horasAus[n] === horasProg[n]; };
+    var crudas = [];
+    porHora.forEach(function (P) {
+      if (P.cerrado) return;
+      var st = P.st, h = P.h;
+      var apoyoTxt = P.apoyo.map(function (n) { return corto(ix, n); }).join(', ');
+      ix.odonto.forEach(function (o) {
+        if (st[o.nombre].act !== 'CLI') return;
+        var x = P.asig[o.nombre];
+        if (!x) {
+          var causa = '', dup = duplaEn(ix, o.nombre, st);
+          if (dup && st[dup]) {
+            var conOtro = Object.keys(P.asig).filter(function (k) { return P.asig[k].tons === dup; })[0];
+            causa = conOtro ? visible(ix, st, dup) + ' acompaña a ' + visible(ix, st, conOtro) : textoPersona(ix, dup, st[dup]);
+          }
+          var completo = ausenteTodo(dup);
+          var sugB = 'Bloquear este período en la agenda o alivianarla' + (apoyoTxt ? ', o pedir apoyo a ' + apoyoTxt + ' (disponible en este horario)' : '');
+          var sugR = 'Pedir reemplazo de TONS ' + (completo ? 'para la jornada' : 'para este período') + (apoyoTxt ? '. ' + apoyoTxt + ' está disponible en este horario' : '');
+          if (dup && st[dup] && st[dup].evento && TIPOS[st[dup].evento.tipo] && TIPOS[st[dup].evento.tipo].pideReemplazo) sugR = 'Pedir reemplazo de TONS para este período (no devolverá las horas)';
+          // La decisión (reemplazo o bloqueo) se toma más abajo, cuando se conocen todas las horas sin TONS del día.
+          var forzar = !!(dup && st[dup] && st[dup].evento && TIPOS[st[dup].evento.tipo] && TIPOS[st[dup].evento.tipo].pideReemplazo);
+          crudas.push({ nivel: 'roja', clave: 'sin|' + o.nombre, texto: visible(ix, st, o.nombre) + ' (' + (P.box[o.nombre] || 'box') + ') queda sin TONS' + (causa ? ' (' + causa + ')' : ''), forzar: forzar,
+                        sugerencia: sugB, h: h, apoyo: P.apoyo.length > 0, accion: 'bloqueo', cargo: 'TONS',
+                        ausente: dup && ausH[dup] && ausH[dup][h] ? dup : '', sugBloqueo: sugB, sugReemplazo: sugR,
+                        afectado: visible(ix, st, o.nombre), box: P.box[o.nombre] || '', causa: causa, apoyoTxt: apoyoTxt });
+          res.conteo.sinTons++;
+        } else if (x.tipo !== 'dupla') {
+          crudas.push({ nivel: 'info', clave: 'cob|' + o.nombre + '|' + x.tons, texto: visible(ix, st, x.tons) + ' acompaña a ' + visible(ix, st, o.nombre) + ' (' + (P.box[o.nombre] || 'box') + ')' + (x.tipo === 'manual' ? ', cobertura registrada' : ', cobertura automática'), sugerencia: '', h: h });
+          res.conteo.cobertura++;
+        }
+      });
+      ix.tonsTodas.forEach(function (t) {
+        if (st[t.nombre].act !== 'CLI' || tonsUsada(P, t.nombre)) return;
+        var dueno = duenoEn(ix, t.nombre, st);
+        var od = dueno ? ix.porNombre[dueno] : null;
+        var causa = dueno && st[dueno] ? textoPersona(ix, dueno, st[dueno]) : '';
+        var forzarOd = !!(dueno && st[dueno] && st[dueno].evento && TIPOS[st[dueno].evento.tipo] && TIPOS[st[dueno].evento.tipo].pideReemplazo);
+        var completo = ausenteTodo(dueno) || forzarOd;
+        var boxOd = dueno ? (P.box[dueno] || (od && od.box) || '') : '';
+        // La TONS no tiene agenda propia que bloquear o alivianar: en estas horas se dedica a tareas administrativas.
+        var sugB = 'La TONS queda para tareas administrativas en este período';
+        var sug = completo
+          ? 'Pedir reemplazo de odontólogo/a' + (boxOd ? ' para el ' + boxOd : '') + (forzarOd ? ' (no devolverá las horas)' : ' durante la jornada') + '; si no hay reemplazo, la TONS queda para tareas administrativas'
+          : sugB;
+        crudas.push({ nivel: 'ambar', clave: 'sola|' + t.nombre, texto: visible(ix, st, t.nombre) + ' queda sin odontólogo' + (causa ? ' (' + causa + ')' : ''),
+                      sugerencia: sug, h: h, accion: completo ? 'reemplazo' : 'administrativo', cargo: 'Odontólogo/a', sugBloqueo: sugB,
+                      ausente: completo ? dueno : '', grupoR: completo ? 'OD|' + dueno : '', forzar: forzarOd,
+                      afectado: dueno ? visible(ix, st, dueno) : '', tons: visible(ix, st, t.nombre), box: boxOd, causa: causa });
+        res.conteo.tonsSola++;
+      });
+      P.ocupados.forEach(function (x) {
+        crudas.push({ nivel: 'roja', clave: 'box|' + x.box, texto: x.box + ' ocupado: ' + x.nombres.join(' y ') + ' atienden a la misma hora',
+                      sugerencia: 'Cambiar el horario de la recuperación o usar otro box', h: h });
+      });
+      if (estandar) {
+        var e = estandar.horas[HORAS.indexOf(h)];
+        // Solo cuando normalmente atienden dos o más duplas: si hay una sola (vespertino, sábado), ya la avisa su propia alerta.
+        if (e && e.duplasAtendiendo > 1 && P.duplasAtendiendo === 0) {
+          crudas.push({ nivel: 'roja', clave: 'unidad', texto: 'La unidad queda sin ninguna dupla atendiendo', sugerencia: 'Revisar si se puede mover alguna actividad no clínica a otro horario', h: h });
+          res.conteo.sinDupla++;
+        }
+      }
+    });
+    // ODONTÓLOGO/A SIN TONS. Se pide reemplazo de TONS cuando el odontólogo/a queda 5 horas o más sin TONS en el día
+    // (por ejemplo, toda la mañana de 8:00 a 13:00). Con menos horas se bloquea o se aliviana la agenda.
+    // Las horas se cuentan por TONS ausente: su reemplazo también cubre, en las horas de su ausencia en que no está
+    // en el box de su dupla, a otro odontólogo/a que haya quedado sin TONS (por ejemplo, el que ella cubría).
+    var grupos = {};
+    var sumar = function (g, c) { (grupos[g] = grupos[g] || []).push(c); c.grupoR = g; };
+    var usadas = {};
+    crudas.forEach(function (c) {
+      if (c.cargo !== 'TONS' || !c.ausente) return;
+      sumar('TONS|' + c.ausente, c);
+      (usadas[c.ausente] = usadas[c.ausente] || {})[c.h] = true;
+    });
+    crudas.forEach(function (c) {
+      if (c.cargo !== 'TONS' || c.grupoR) return;
+      var aus = Object.keys(usadas).filter(function (n) { return ausH[n] && ausH[n][c.h] && !usadas[n][c.h]; })[0];
+      if (!aus) return;
+      usadas[aus][c.h] = true; c.absorbida = true; c.ausente = aus; sumar('TONS|' + aus, c);
+    });
+    // Si el reemplazo de una TONS ausente no alcanza el mínimo, las horas que absorbía vuelven a su odontólogo/a.
+    Object.keys(grupos).forEach(function (g) {
+      if (grupos[g].length >= HORAS_REEMPLAZO) return;
+      grupos[g].forEach(function (c) { if (c.absorbida) { c.absorbida = false; c.ausente = ''; c.grupoR = ''; } });
+      grupos[g] = grupos[g].filter(function (c) { return c.grupoR; });
+    });
+    crudas.forEach(function (c) { if (c.cargo === 'TONS' && !c.grupoR) sumar('SIN|' + c.clave, c); });
+    Object.keys(grupos).forEach(function (g) {
+      // Se pide reemplazo con 5 horas o más, o cuando quien falta avisó que no devolverá las horas.
+      var pide = grupos[g].length >= HORAS_REEMPLAZO || grupos[g].some(function (c) { return c.forzar; });
+      grupos[g].forEach(function (c) {
+        if (!pide) { c.accion = 'bloqueo'; c.sugerencia = c.sugBloqueo; c.absorbida = false; c.grupoR = ''; c.ausente = ''; return; }
+        c.accion = 'reemplazo';
+        c.sugerencia = c.absorbida
+          ? 'Lo cubre la TONS de reemplazo que se pide por ' + corto(ix, c.ausente) + '; si no llega el reemplazo, bloquear o alivianar la agenda en este período'
+          : c.sugReemplazo;
+      });
+    });
+    // TONS SIN ODONTÓLOGO/A. Se pide reemplazo de odontólogo/a solo si falta la jornada completa y la TONS queda sola
+    // en la mañana y en la tarde; si queda libre solo una parte del día, la TONS hace tareas administrativas.
+    var tramosR = {};
+    crudas.forEach(function (c) {
+      if (c.cargo !== 'Odontólogo/a' || c.accion !== 'reemplazo') return;
+      var t = tramosR[c.grupoR] = tramosR[c.grupoR] || { manana: false, tarde: false, forzar: false };
+      if (c.h < 13) t.manana = true; else if (c.h >= 14) t.tarde = true;
+      if (c.forzar) t.forzar = true;
+    });
+    crudas.forEach(function (c) {
+      if (c.cargo !== 'Odontólogo/a' || c.accion !== 'reemplazo') return;
+      var t = tramosR[c.grupoR];
+      if (t.forzar || (t.manana && t.tarde)) return;
+      c.accion = 'administrativo'; c.sugerencia = c.sugBloqueo; c.grupoR = ''; c.ausente = '';
+    });
+    res.alertas = agrupar(crudas);
+
+    // horas de apoyo disponibles
+    ix.apoyo.forEach(function (p) {
+      var hs = porHora.filter(function (P) { return !P.cerrado && P.apoyo.indexOf(p.nombre) >= 0; }).map(function (P) { return P.h; });
+      var enBrecha = hs.filter(function (h) { return crudas.some(function (c) { return c.nivel === 'roja' && c.h === h && c.clave.indexOf('sin|') === 0; }); });
+      var aus = porHora.filter(function (P) { var a = P.st[p.nombre]; return a && a.evento && a.base === 'DIS' && a.act !== 'CIE'; }).map(function (P) { return P.st[p.nombre].etiqueta; });
+      res.apoyo.push({ nombre: p.nombre, corto: p.corto || p.nombre, horas: hs, enBrecha: enBrecha, ausencia: aus.length ? aus[0] : '' });
+    });
+    return res;
+  }
+
+  var HORAS_REEMPLAZO = 5; // horas sin TONS en el día desde las que conviene pedir reemplazo
+
+  function agrupar(crudas) {
+    var orden = { roja: 0, ambar: 1, info: 2 };
+    var grupos = {};
+    crudas.forEach(function (c) {
+      var k = c.nivel + '|' + c.clave + '|' + c.texto + '|' + c.sugerencia;
+      (grupos[k] = grupos[k] || []).push(c);
+    });
+    var out = [];
+    Object.keys(grupos).forEach(function (k) {
+      var lista = grupos[k].sort(function (a, b) { return a.h - b.h; });
+      var ini = lista[0], prev = lista[0].h;
+      for (var i = 1; i <= lista.length; i++) {
+        var c = lista[i];
+        if (c && c.h === prev + 1) { prev = c.h; continue; }
+        out.push({ nivel: ini.nivel, clave: ini.clave, texto: ini.texto, sugerencia: ini.sugerencia, desde: ini.h, hasta: prev + 1, horas: prev + 1 - ini.h, rango: rango(ini.h, prev + 1), apoyo: ini.apoyo,
+                   accion: ini.accion || '', cargo: ini.cargo || '', afectado: ini.afectado || '', tons: ini.tons || '', box: ini.box || '', causa: ini.causa || '', apoyoTxt: ini.apoyoTxt || '',
+                   grupoR: ini.grupoR || '', absorbida: !!ini.absorbida, ausente: ini.ausente || '' });
+        if (c) { ini = c; prev = c.h; }
+      }
+    });
+    return out.sort(function (a, b) { return orden[a.nivel] - orden[b.nivel] || a.desde - b.desde; });
+  }
+
+  function estandarDelDia(diaIdx, datos) {
+    var ref = aTexto(new Date(2024, 0, 1 + diaIdx)); // 1 de enero de 2024 fue lunes
+    return construirDia(ref, datos, [], { sinVigencia: true });
+  }
+
+  /* Eventos de una fecha. Se omiten los que solo afectan a personas que ese día no trabajan
+     (por ejemplo, el reemplazo de una odontóloga vespertina en un día que no le corresponde). */
+  function eventosDelDia(datos, fecha) {
+    var dia = DIAS[diaSemana(aFecha(fecha))], est = datos.estandar || {};
+    var per = {}; (datos.personal || []).forEach(function (p) { per[p.nombre] = p; });
+    var trabaja = function (n) {
+      if (per[n] && !vigente(per[n], fecha)) return false; // ya no está en el equipo o aún no llega
+      return ((est[n] || {})[dia] || []).some(function (v) { return v && v !== 'Fuera de jornada'; });
+    };
+    return (datos.eventos || []).filter(function (e) {
+      if (!eventoEnFecha(e, fecha)) return false;
+      var ps = e.personas || [];
+      if (TIPOS[e.tipo] && TIPOS[e.tipo].efecto === 'EXT') return true;
+      return !ps.length || ps.indexOf(TODOS) >= 0 || ps.some(trabaja);
+    });
+  }
+
+  function calcularDia(fecha, datos) {
+    var wd = diaSemana(aFecha(fecha));
+    var evs = eventosDelDia(datos, fecha);
+    var est = wd < DIAS_ATENCION ? estandarDelDia(wd, datos) : null;
+    return construirDia(fecha, datos, evs, { estandar: est });
+  }
+
+  function calcularMes(anio, mes0, datos) {
+    var dias = [];
+    var est = [0, 1, 2, 3, 4, 5].map(function (i) { return estandarDelDia(i, datos); });
+    for (var k = 1; k <= 31; k++) {
+      var d = new Date(anio, mes0, k);
+      if (d.getMonth() !== mes0) break;
+      var wd = diaSemana(d);
+      if (wd >= DIAS_ATENCION) continue;
+      var f = aTexto(d);
+      var evs = eventosDelDia(datos, f);
+      dias.push(construirDia(f, datos, evs, { estandar: est[wd] }));
+    }
+    var resumen = { horasSinTons: 0, horasCobertura: 0, horasTonsSola: 0, diasConAlerta: 0, alertas: [], apoyo: {} };
+    dias.forEach(function (D) {
+      resumen.horasSinTons += D.conteo.sinTons;
+      resumen.horasCobertura += D.conteo.cobertura;
+      resumen.horasTonsSola += D.conteo.tonsSola;
+      var graves = D.alertas.filter(function (a) { return a.nivel !== 'info'; });
+      if (graves.length) resumen.diasConAlerta++;
+      graves.forEach(function (a) { resumen.alertas.push({ fecha: D.fecha, dia: D.dia, nivel: a.nivel, texto: a.texto, sugerencia: a.sugerencia, rango: a.rango, horas: a.horas }); });
+      D.apoyo.forEach(function (ap) {
+        var r = resumen.apoyo[ap.nombre] = resumen.apoyo[ap.nombre] || { nombre: ap.nombre, corto: ap.corto, horas: 0, dias: [], enBrecha: 0, ausencias: [] };
+        if (ap.horas.length) { r.horas += ap.horas.length; r.dias.push({ fecha: D.fecha, desde: ap.horas[0], hasta: ap.horas[ap.horas.length - 1] + 1, enBrecha: ap.enBrecha.length }); }
+        r.enBrecha += ap.enBrecha.length;
+        if (ap.ausencia) r.ausencias.push({ fecha: D.fecha, motivo: ap.ausencia });
+      });
+    });
+    return { anio: anio, mes0: mes0, dias: dias, resumen: resumen };
+  }
+
+  /* Alertas que provocaría un evento nuevo o editado. */
+  function impacto(evento, datos) {
+    var otros = (datos.eventos || []).filter(function (e) { return !evento.id || e.id !== evento.id; });
+    var antes = { personal: datos.personal, estandar: datos.estandar, eventos: otros };
+    var despues = { personal: datos.personal, estandar: datos.estandar, eventos: otros.concat([evento]) };
+    return fechasDeEvento(evento, 400).slice(0, 40).map(function (f) {
+      var a = calcularDia(f, antes), b = calcularDia(f, despues);
+      var firma = function (x) { return x.nivel + '|' + x.texto + '|' + x.rango; };
+      var previas = {};
+      a.alertas.forEach(function (x) { previas[firma(x)] = true; });
+      var alertas = b.alertas.map(function (x) { var y = {}; for (var k in x) y[k] = x[k]; y.nueva = !previas[firma(x)]; return y; });
+      var actuales = {};
+      b.alertas.forEach(function (x) { actuales[firma(x)] = true; });
+      var resueltas = a.alertas.filter(function (x) { return x.nivel !== 'info' && !actuales[firma(x)]; });
+      return { fecha: f, dia: b.dia, cerrado: b.cerrado, alertas: alertas, resueltas: resueltas };
+    });
+  }
+
+  /* ---------- saldos: permisos, feriado legal, capacitación, devolución de horas ---------- */
+  var REGLAS = ['Año calendario', 'Ciclo septiembre–agosto', 'Sin período'];
+  function periodoDe(regla, fecha) {
+    var d = aFecha(fecha), y = d.getFullYear();
+    if (regla === 'Año calendario') return String(y);
+    if (regla === 'Ciclo septiembre–agosto') { var a = d.getMonth() >= 8 ? y : y - 1; return a + '-' + (a + 1); }
+    return 'Total';
+  }
+  function rangoPeriodo(regla, periodo) {
+    if (regla === 'Año calendario') return [periodo + '-01-01', periodo + '-12-31'];
+    if (regla === 'Ciclo septiembre–agosto') { var a = parseInt(periodo, 10); return [a + '-09-01', (a + 1) + '-08-31']; }
+    return ['0000-01-01', '9999-12-31'];
+  }
+  function periodosCercanos(regla, fecha) {
+    if (regla === 'Sin período') return ['Total'];
+    var d = aFecha(fecha), out = [];
+    for (var k = -2; k <= 1; k++) out.push(periodoDe(regla, aTexto(new Date(d.getFullYear() + k, d.getMonth(), d.getDate()))));
+    return out;
+  }
+  function configSaldo(datos, tipo) {
+    return (datos.saldosConfig || []).filter(function (c) { return c.tipo === tipo; })[0] || null;
+  }
+  function cerradoEnFecha(datos, f) {
+    return (datos.eventos || []).some(function (e) {
+      var t = TIPOS[e.tipo];
+      return t && t.efecto === 'CIE' && jornadaCompleta(e) && eventoEnFecha(e, f);
+    });
+  }
+  /* Días u horas usados por una persona en un tipo de evento, dentro de un rango de fechas.
+     Un día con todo su horario cubierto cuenta 1; si cubre solo una parte, cuenta 0,5. */
+  function usosDe(datos, tipo, persona, desde, hasta, conSabado) {
+    var extra = TIPOS[tipo] && TIPOS[tipo].efecto === 'EXT';
+    var porFecha = {};
+    (datos.eventos || []).forEach(function (ev) {
+      if (ev.tipo !== tipo || !afectaA(ev, persona)) return;
+      fechasDeEvento(ev, 400).forEach(function (f) {
+        if (f < desde || f > hasta) return;
+        (porFecha[f] = porFecha[f] || []).push(ev);
+      });
+    });
+    var out = [];
+    Object.keys(porFecha).sort().forEach(function (f) {
+      if (cerradoEnFecha(datos, f)) return;
+      if (diaSemana(aFecha(f)) >= 5 && !conSabado) return; // los días de permisos, feriado legal y capacitación se cuentan de lunes a viernes
+      var fila = ((datos.estandar || {})[persona] || {})[DIAS[diaSemana(aFecha(f))]] || [];
+      // En una recuperación se cuentan las horas trabajadas fuera de su horario; en lo demás, las horas de su horario que cubre.
+      var prog = HORAS.filter(function (h, i) {
+        var v = fila[i] || 'Fuera de jornada';
+        return extra ? v === 'Fuera de jornada' : v !== 'Colación' && v !== 'Fuera de jornada';
+      });
+      if (!prog.length) return;
+      var cub = prog.filter(function (h) { return porFecha[f].some(function (ev) { return eventoEnHora(ev, h); }); });
+      if (!cub.length) return;
+      var desc = [];
+      porFecha[f].forEach(function (e) { var t = e.obs || e.tipo; if (desc.indexOf(t) < 0) desc.push(t); });
+      out.push({ fecha: f, dias: cub.length === prog.length ? 1 : 0.5, horas: cub.length, desc: desc.join(', '),
+                 ids: porFecha[f].map(function (e) { return e.id; }) });
+    });
+    return out;
+  }
+  function calcularSaldo(datos, persona, tipo, periodo) {
+    var cfg = configSaldo(datos, tipo);
+    if (!cfg) return null;
+    var regla = cfg.periodo || 'Sin período';
+    var r = rangoPeriodo(regla, periodo);
+    var horas = cfg.unidad === 'horas';
+    var usos = usosDe(datos, tipo, persona, r[0], r[1], horas);
+    var usado = usos.reduce(function (s, u) { return s + (horas ? u.horas : u.dias); }, 0);
+    // Permiso con devolución: lo "asignado" son las horas ya recuperadas; el saldo negativo son horas por devolver.
+    var devuelve = TIPOS[tipo] && TIPOS[tipo].devuelveCon;
+    var recup = devuelve ? usosDe(datos, devuelve, persona, r[0], r[1], true) : [];
+    var recuperado = recup.reduce(function (s, u) { return s + u.horas; }, 0);
+    var ajustes = (datos.ajustes || []).filter(function (a) {
+      return a.persona === persona && a.tipo === tipo && (regla === 'Sin período' || a.periodo === periodo);
+    });
+    var base = isFinite(cfg.cupo) && cfg.cupo !== null && cfg.cupo !== '' ? +cfg.cupo : 0;
+    var cupo = base + recuperado + ajustes.reduce(function (s, a) { return s + (+a.cantidad || 0); }, 0);
+    return { persona: persona, tipo: tipo, periodo: periodo, regla: regla, unidad: cfg.unidad || 'días',
+             base: base, ajustes: ajustes, cupo: cupo, usado: usado, saldo: cupo - usado, usos: usos,
+             devolucion: !!devuelve, recuperado: recuperado, recuperaciones: recup,
+             conCupo: base !== 0 || ajustes.length > 0 || !!devuelve };
+  }
+
+  /* Solicitudes para Subdirección entre dos fechas: reemplazos (jornada completa) y bloqueos (parcial). */
+  function reporteSolicitudes(datos, desde, hasta) {
+    var reemplazos = [], bloqueos = [], d = aFecha(desde), fin = aFecha(hasta);
+    while (d <= fin) {
+      if (diaSemana(d) < DIAS_ATENCION) {
+        var f = aTexto(d), D = calcularDia(f, datos);
+        if (!D.cerrado) {
+          var vistos = {};
+          D.alertas.forEach(function (a) {
+            if (a.accion !== 'reemplazo' && a.accion !== 'bloqueo') return; // las horas administrativas de la TONS no se solicitan
+            if (a.accion === 'reemplazo') {
+              var k = a.grupoR || a.clave;
+              var tramo = { box: a.box, afectado: a.afectado, rango: a.rango, desde: a.desde, hasta: a.hasta, absorbida: a.absorbida };
+              if (!vistos[k]) {
+                vistos[k] = { fecha: f, dia: D.dia, cargo: a.cargo, box: '', afectado: '', tons: a.tons, causa: '', ausente: a.ausente,
+                              rangos: [], tramos: [], horas: 0, apoyoTxt: a.apoyoTxt, nivel: a.nivel };
+                reemplazos.push(vistos[k]);
+              }
+              var R = vistos[k];
+              R.tramos.push(tramo); R.horas += a.horas;
+              if (!a.absorbida) { R.box = R.box || a.box; R.afectado = R.afectado || a.afectado; R.causa = R.causa || a.causa; }
+            } else {
+              bloqueos.push({ fecha: f, dia: D.dia, rango: a.rango, horas: a.horas, cargo: a.cargo, box: a.box, afectado: a.afectado,
+                              tons: a.tons, causa: a.causa, apoyoTxt: a.apoyoTxt, nivel: a.nivel });
+            }
+          });
+        }
+      }
+      d.setDate(d.getDate() + 1);
+    }
+    // Une tramos contiguos del mismo box (p. ej. 14:00–15:00 y 15:00–17:00).
+    reemplazos.forEach(function (r) {
+      r.tramos.sort(function (a, b) { return (a.box === r.box ? 0 : 1) - (b.box === r.box ? 0 : 1) || a.desde - b.desde; });
+      var unidos = [];
+      r.tramos.forEach(function (t) {
+        var u = unidos[unidos.length - 1];
+        if (u && u.box === t.box && u.hasta === t.desde) { u.hasta = t.hasta; u.rango = rango(u.desde, u.hasta); }
+        else unidos.push({ box: t.box, afectado: t.afectado, desde: t.desde, hasta: t.hasta, rango: t.rango, absorbida: t.absorbida });
+      });
+      r.tramos = unidos;
+      r.rangos = unidos.filter(function (t) { return !t.absorbida; }).map(function (t) { return t.rango; });
+    });
+    return { desde: desde, hasta: hasta, reemplazos: reemplazos, bloqueos: bloqueos };
+  }
+
+  function horarioApoyo(datos) {
+    var ix = indexar(datos), out = [];
+    ix.apoyo.forEach(function (p) {
+      var bloques = [];
+      DIAS.slice(0, DIAS_ATENCION).forEach(function (dia) {
+        var fila = ((datos.estandar || {})[p.nombre] || {})[dia] || [];
+        var hs = HORAS.filter(function (h, i) { return fila[i] === 'Disponible (apoyo)'; });
+        if (hs.length) bloques.push({ dia: dia, desde: hs[0], hasta: hs[hs.length - 1] + 1, horas: hs.length });
+      });
+      out.push({ nombre: p.nombre, corto: p.corto || p.nombre, bloques: bloques, semanal: bloques.reduce(function (s, b) { return s + b.horas; }, 0) });
+    });
+    return out;
+  }
+
+  return {
+    TIPOS: TIPOS, ACT: ACT, DIAS: DIAS, HORAS: HORAS, DIAS_ATENCION: DIAS_ATENCION, TODOS: TODOS, REPETICIONES: REPETICIONES,
+    listaDuplas: listaDuplas, boxEn: boxEn, leerBox: leerBox, vigente: vigente, actual: actual,
+    ROLES: { ODONTO: ROL_ODONTO, TONS: ROL_TONS, APOYO: ROL_APOYO },
+    aFecha: aFecha, aTexto: aTexto, diaSemana: diaSemana, hhmm: hhmm, rango: rango,
+    eventoEnFecha: eventoEnFecha, fechasDeEvento: fechasDeEvento, textoRepeticion: textoRepeticion,
+    codigoRepeticion: codigoRepeticion, semanaDelMes: semanaDelMes, esUltimo: esUltimo,
+    calcularDia: calcularDia, calcularMes: calcularMes, estandarDelDia: estandarDelDia,
+    impacto: impacto, horarioApoyo: horarioApoyo, indexar: indexar,
+    REGLAS: REGLAS, periodoDe: periodoDe, rangoPeriodo: rangoPeriodo, periodosCercanos: periodosCercanos,
+    configSaldo: configSaldo, usosDe: usosDe, calcularSaldo: calcularSaldo,
+    reporteSolicitudes: reporteSolicitudes
+  };
+})();
+if (typeof module !== 'undefined') module.exports = Motor;
+
+</script>
+<script src="config.js"></script>
+<script>
+/* Conexión de la app del celular con la planilla (Apps Script). Guarda el último horario para usarlo sin internet. */
+(function () {
+  var CLAVE = 'ud-ultimo-horario';
+  function guardar(datos) {
+    try { localStorage.setItem(CLAVE, JSON.stringify({ cuando: new Date().toISOString(), datos: datos })); } catch (e) { }
+  }
+  function ultimo() {
+    try { var x = JSON.parse(localStorage.getItem(CLAVE) || 'null'); return x && x.datos ? x : null; } catch (e) { return null; }
+  }
+  function fechaHora(iso) {
+    var d = new Date(iso), p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return p(d.getDate()) + '-' + p(d.getMonth() + 1) + '-' + d.getFullYear() + ' a las ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  window.__BACKEND__ = {
+    obtenerDatosEquipo: function (codigo) {
+      var cfg = window.APP_CONFIG || {};
+      if (!cfg.url || cfg.url.indexOf('/exec') < 0) {
+        return Promise.reject(new Error('Falta configurar el enlace del equipo en el archivo config.js.'));
+      }
+      var url = cfg.url + (cfg.url.indexOf('?') < 0 ? '?' : '&') + 'api=equipo&codigo=' + encodeURIComponent(codigo || '') + '&t=' + Date.now();
+      return fetch(url, { cache: 'no-store', redirect: 'follow' })
+        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function (datos) {
+          if (datos && datos.error === 'servidor') throw new Error(datos.mensaje || 'Error en la planilla');
+          if (datos && !datos.error) guardar(datos);
+          return datos;
+        })
+        .catch(function (err) {
+          var u = ultimo();
+          if (u) { var d = u.datos; d.offline = fechaHora(u.cuando); return d; }
+          throw new Error('No hay conexión y aún no hay un horario guardado en este teléfono. (' + (err && err.message ? err.message : err) + ')');
+        });
+    }
+  };
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () { }); });
+  }
+})();
+
+</script>
+<script>
+(function () {
+  'use strict';
+  var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  var DCORTO = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  var $ = function (id) { return document.getElementById(id); };
+  var E = { datos: null, ix: null, persona: '', modo: 'semana', ref: new Date(), est: [] };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function hoyTexto() { return Motor.aTexto(new Date()); }
+  function lunesDe(d) { var x = new Date(d.getFullYear(), d.getMonth(), d.getDate()), wd = Motor.diaSemana(x); x.setDate(x.getDate() + (wd >= 6 ? 7 - wd : -wd)); return x; }
+  function guardarPref(k, v) { try { localStorage.setItem('ud-' + k, v); } catch (e) { } }
+  function leerPref(k) { try { return localStorage.getItem('ud-' + k) || ''; } catch (e) { return ''; } }
+
+  function api(fn) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return new Promise(function (ok, mal) {
+      if (window.google && google.script && google.script.run) { var r = google.script.run.withSuccessHandler(ok).withFailureHandler(mal); r[fn].apply(r, args); }
+      else if (window.__BACKEND__) setTimeout(function () { try { Promise.resolve(window.__BACKEND__[fn].apply(null, args)).then(ok, mal); } catch (e) { mal(e); } }, 50);
+      else mal(new Error('No hay conexión con la planilla.'));
+    });
+  }
+
+  /* ---------- horario de una persona ---------- */
+  function corto(n) { var p = E.ix.porNombre[n]; return p && p.corto ? p.corto : n; }
+  function visible(H, n) { return H.st[n] && H.st[n].reemplazo ? H.st[n].reemplazo : corto(n); }
+  function estadoHora(H, n) {
+    var p = E.ix.porNombre[n], a = H.st[n];
+    if (!p || !a) return { t: '', c: 'fue' };
+    if (H.cerrado) return { t: 'Unidad cerrada · ' + a.etiqueta, c: 'cie' };
+    if (a.act === 'FUE') return { t: '', c: 'fue' };
+    if (a.act === 'COL') return { t: 'Colación', c: 'col' };
+    if (a.reemplazo) return { t: 'Reemplazo: ' + a.reemplazo + ' cubre este horario', c: 'ges' };
+    if (p.rol === Motor.ROLES.ODONTO && a.act === 'CLI') {
+      var x = H.asig[n];
+      var bx = (H.box && H.box[n]) || 'Box';
+      var rec = a.recupera ? ' · recuperación de horas' : '';
+      if (!x) return { t: bx + ' · sin TONS asignada' + rec, c: 'sin' };
+      return { t: bx + ' · con ' + visible(H, x.tons) + (x.tipo === 'dupla' ? '' : ' (cobertura)') + rec, c: x.tipo === 'dupla' ? 'cli' : 'apo' };
+    }
+    var con = Object.keys(H.asig).filter(function (d) { return H.asig[d].tons === n; })[0];
+    if (con) {
+      var dp = E.ix.porNombre[con];
+      var habitual = (E.ix.duplas[con] || []).indexOf(n) >= 0;
+      return { t: ((H.box && H.box[con]) || 'Box') + ' · con ' + visible(H, con) + (habitual ? '' : ' (cobertura)') + (a.recupera ? ' · recuperación de horas' : ''), c: habitual ? 'cli' : 'apo' };
+    }
+    if (a.act === 'CLI') return { t: 'Sin odontólogo asignado: disponible para apoyo', c: 'sola' };
+    if (a.act === 'GES') return { t: 'Gestión', c: 'ges' };
+    if (a.act === 'ADM') return { t: 'Trabajo administrativo', c: 'adm' };
+    if (a.act === 'BOD') return { t: a.evento ? a.etiqueta : 'Bodega', c: 'bod' };
+    if (a.act === 'DIS') return { t: 'Agenda dental y confirmaciones', c: 'dis' };
+    return { t: a.etiqueta, c: 'ev', tipo: a.evento ? a.evento.tipo : '' };
+  }
+  function segmentos(D, n) {
+    var out = [];
+    D.horas.forEach(function (H) {
+      var s = estadoHora(H, n);
+      if (!s.t) return;
+      var u = out[out.length - 1];
+      if (u && u.t === s.t && u.c === s.c && u.hasta === H.h) u.hasta = H.h + 1;
+      else out.push({ t: s.t, c: s.c, tipo: s.tipo, desde: H.h, hasta: H.h + 1 });
+    });
+    return out;
+  }
+  function firma(D, n) { return D.horas.map(function (H) { var s = estadoHora(H, n); return s.c + s.t; }).join('|'); }
+  function infoDia(f) {
+    var D = Motor.calcularDia(f, E.datos);
+    var wd = Motor.diaSemana(Motor.aFecha(f));
+    var cambio = E.persona && firma(D, E.persona) !== firma(E.est[wd], E.persona);
+    var alerta = E.persona && D.horas.some(function (H) { var s = estadoHora(H, E.persona); return s.c === 'sin'; });
+    return { D: D, cambio: cambio, alerta: alerta };
+  }
+  function estiloSeg(s) {
+    if (s.c === 'ev' && Motor.TIPOS[s.tipo]) return ' style="background:' + Motor.TIPOS[s.tipo].fondo + ';color:' + Motor.TIPOS[s.tipo].texto + '"';
+    return '';
+  }
+  function badges(f, I) {
+    var b = '';
+    if (f === hoyTexto()) b += '<span class="badge hoy">Hoy</span>';
+    if (I.D.cerrado) b += '<span class="badge cerrado">Cerrado</span>';
+    else if (I.alerta) b += '<span class="badge alerta">Sin TONS</span>';
+    else if (I.cambio) b += '<span class="badge cambio">Cambio</span>';
+    return b;
+  }
+
+  /* ---------- vistas ---------- */
+  function render() {
+    if (!E.datos) return;
+    var cont = $('vista');
+    if (E.modo === 'semana') {
+      var l = lunesDe(E.ref), v = new Date(l.getFullYear(), l.getMonth(), l.getDate() + 5);
+      $('titulo').textContent = l.getDate() + (l.getMonth() !== v.getMonth() ? ' ' + MESES[l.getMonth()].slice(0, 3) : '') + ' – ' + v.getDate() + ' ' + MESES[v.getMonth()] + ' ' + v.getFullYear();
+    } else {
+      $('titulo').textContent = MESES[E.ref.getMonth()] + ' ' + E.ref.getFullYear();
+    }
+    if (!E.persona) { cont.innerHTML = '<div class="aviso-sel">Elige tu nombre para ver tu horario.</div>'; return; }
+    var ft = hoyTexto();
+    if (E.modo === 'semana') {
+      var lun = lunesDe(E.ref), h = '';
+      var nDias = 0;
+      for (var i = 0; i < 6; i++) {
+        var f = Motor.aTexto(new Date(lun.getFullYear(), lun.getMonth(), lun.getDate() + i));
+        var I = infoDia(f), d = Motor.aFecha(f);
+        var segs = segmentos(I.D, E.persona);
+        if (i === 5 && !segs.length) continue; // el sábado se muestra solo a quien trabaja ese día
+        nDias++;
+        h += '<section class="dia' + (f === ft ? ' hoy' : '') + (f < ft ? ' pasado' : '') + '">' +
+          '<div class="cab"><b>' + Motor.DIAS[i] + ' ' + d.getDate() + '</b><span class="badges">' + badges(f, I) + '</span></div>' +
+          '<ul class="segmentos">' + (segs.length ? segs.map(function (s) {
+            return '<li class="s-' + s.c + '"' + estiloSeg(s) + '><span class="h">' + Motor.rango(s.desde, s.hasta) + '</span><span>' + esc(s.t) + '</span></li>';
+          }).join('') : '<li class="s-col"><span class="h"></span><span>Sin horario este día</span></li>') + '</ul>' +
+          '<div class="pie"><button class="link" data-dia="' + f + '">Ver la unidad completa</button></div></section>';
+      }
+      cont.innerHTML = '<div class="semana' + (nDias > 5 ? ' seis' : '') + '">' + h + '</div>';
+      return;
+    }
+    var a = E.ref.getFullYear(), m = E.ref.getMonth(), hm = '<div class="mes">' + DCORTO.map(function (x) { return '<div class="cabm">' + x + '</div>'; }).join('');
+    var primero = true;
+    for (var k = 1; k <= 31; k++) {
+      var dd = new Date(a, m, k);
+      if (dd.getMonth() !== m) break;
+      var wd = Motor.diaSemana(dd);
+      if (wd > 5) continue;
+      if (primero) { for (var z = 0; z < wd; z++) hm += '<div class="celda vacia"></div>'; primero = false; }
+      var fm = Motor.aTexto(dd), Im = infoDia(fm);
+      var sg = segmentos(Im.D, E.persona).filter(function (s) { return s.c !== 'col'; });
+      var resumen = Im.D.cerrado ? 'Unidad cerrada' : (Im.cambio || Im.alerta ? (sg[0] ? sg.map(function (s) { return s.t; }).filter(function (t, i, arr) { return arr.indexOf(t) === i; }).slice(0, 2).join(' · ') : 'Sin horario') : 'Horario habitual');
+      var claseR = Im.D.cerrado ? 's-cie' : (Im.alerta ? 's-sin' : (Im.cambio ? 's-sola' : 's-cli'));
+      hm += '<button class="celda' + (fm === ft ? ' hoy' : '') + (fm < ft ? ' pasado' : '') + '" data-dia="' + fm + '">' +
+        '<span class="n"><span>' + DCORTO[wd] + ' ' + k + '</span></span><span class="r ' + claseR + '">' + esc(resumen) + '</span>' +
+        '<span class="marca badges">' + badges(fm, Im) + '</span></button>';
+    }
+    cont.innerHTML = hm + '</div><p class="nota">Toca un día para ver tu horario y la unidad completa. "Cambio" marca los días distintos a tu semana habitual.</p>';
+  }
+
+  function tablaDia(D) {
+    var h = '<table class="grilla"><thead><tr><th class="hora">Bloque</th>' + D.columnas.map(function (c) { return '<th>' + esc(c.box) + '<small>' + esc(c.nombres.join(' / ')) + '</small></th>'; }).join('') + '<th class="fuera">Fuera del box</th></tr></thead><tbody>';
+    // Se omiten las horas en que nadie trabaja (por ejemplo, la tarde del sábado).
+    var activa = function (H) { return !H.boxes.every(function (b) { return b.clase === 'fh'; }) || H.fuera.length; };
+    var a0 = 0, a1 = D.horas.length - 1;
+    while (a0 < a1 && !activa(D.horas[a0])) a0++;
+    while (a1 > a0 && !activa(D.horas[a1])) a1--;
+    D = { horas: D.horas.slice(a0, a1 + 1) };
+    var n = D.horas.length ? D.horas[0].boxes.length : 0, cols = [];
+    for (var i = 0; i < n; i++) cols.push(D.horas.map(function (H) { return H.boxes[i]; }));
+    cols.push(D.horas.map(function (H) { return { clase: 'fuera', texto: H.fuera.map(function (f) { return f.texto; }).join('\n') }; }));
+    var sp = cols.map(function (col) {
+      var out = [], i = 0, cl = function (c) { return c.clase + '|' + (c.tipo || '') + '|' + c.texto; };
+      while (i < col.length) { var j = i + 1; while (j < col.length && cl(col[j]) === cl(col[i])) j++; out[i] = j - i; for (var k = i + 1; k < j; k++) out[k] = 0; i = j; }
+      return out;
+    });
+    D.horas.forEach(function (H, r) {
+      h += '<tr><td class="hora">' + Motor.rango(H.h, H.h + 1) + '</td>';
+      cols.forEach(function (col, c) {
+        if (!sp[c][r]) return;
+        var x = col[r], rs = sp[c][r] > 1 ? ' rowspan="' + sp[c][r] + '"' : '';
+        var est = x.clase === 'ev' && Motor.TIPOS[x.tipo] ? ' style="background:' + Motor.TIPOS[x.tipo].fondo + ';color:' + Motor.TIPOS[x.tipo].texto + '"' : '';
+        var l = String(x.texto).split('\n');
+        h += x.clase === 'fuera' ? '<td class="fuera"' + rs + '>' + l.map(esc).join('<br>') + '</td>'
+          : '<td class="' + x.clase + '"' + rs + est + '><span class="l1">' + esc(l[0]) + '</span>' + (l[1] ? '<br>' + esc(l.slice(1).join(' ')) : '') + '</td>';
+      });
+      h += '</tr>';
+    });
+    return h + '</tbody></table>';
+  }
+  function textoEvento(ev) {
+    var q = (ev.personas || []).map(function (n) { return n === Motor.TODOS ? 'Todo el equipo' : corto(n); }).join(', ');
+    var t = Motor.TIPOS[ev.tipo] || {};
+    if (t.efecto === 'REE') return ev.acompanaA + ' reemplaza a ' + q;
+    if (t.efecto === 'CIE') return ev.obs || ev.tipo;
+    return (ev.obs || ev.tipo) + ' · ' + q + ' · ' + (ev.hIni ? ev.hIni + '–' + ev.hFin : 'jornada completa');
+  }
+  function abrirDia(f) {
+    var I = infoDia(f), d = Motor.aFecha(f);
+    var segs = E.persona ? segmentos(I.D, E.persona) : [];
+    $('caja').innerHTML = '<div class="top"><div><h3>' + Motor.DIAS[Motor.diaSemana(d)] + ' ' + d.getDate() + ' de ' + MESES[d.getMonth()] + '</h3></div><button class="btn" id="cerrar">Cerrar</button></div>' +
+      (I.D.eventos.length ? '<div class="chips">' + I.D.eventos.map(function (ev) {
+        var t = Motor.TIPOS[ev.tipo] || { fondo: '#eee', texto: '#333' };
+        return '<span class="chip" style="background:' + t.fondo + ';color:' + t.texto + '">' + esc(textoEvento(ev)) + '</span>';
+      }).join('') + '</div>' : '') +
+      (E.persona ? '<div class="nota" style="font-weight:700;margin:4px 0">' + esc(E.persona) + '</div><ul class="segmentos" style="padding:0">' + segs.map(function (s) {
+        return '<li class="s-' + s.c + '"' + estiloSeg(s) + '><span class="h">' + Motor.rango(s.desde, s.hasta) + '</span><span>' + esc(s.t) + '</span></li>';
+      }).join('') + '</ul>' : '') +
+      '<div class="nota" style="font-weight:700;margin-top:12px">Unidad completa</div><div class="grid-wrap">' + tablaDia(I.D) + '</div>';
+    $('modal').classList.remove('oculto');
+    $('cerrar').onclick = function () { $('modal').classList.add('oculto'); };
+  }
+
+  function mover(n) {
+    if (E.modo === 'semana') E.ref = new Date(E.ref.getFullYear(), E.ref.getMonth(), E.ref.getDate() + 7 * n);
+    else E.ref = new Date(E.ref.getFullYear(), E.ref.getMonth() + n, 1);
+    render();
+  }
+  function enlazar() {
+    $('persona').onchange = function () { E.persona = this.value; guardarPref('persona', E.persona); render(); };
+    $('modo').addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      E.modo = b.dataset.m; guardarPref('modo', E.modo);
+      Array.prototype.forEach.call(this.children, function (x) { x.classList.toggle('activa', x === b); });
+      render();
+    });
+    $('ant').onclick = function () { mover(-1); };
+    $('sig').onclick = function () { mover(1); };
+    $('hoy').onclick = function () { E.ref = new Date(); render(); };
+    $('irFecha').onchange = function () { if (!this.value) return; E.ref = Motor.aFecha(this.value); render(); if (Motor.diaSemana(E.ref) < 6) abrirDia(this.value); };
+    $('vista').addEventListener('click', function (e) { var b = e.target.closest('[data-dia]'); if (b) abrirDia(b.dataset.dia); });
+    $('modal').addEventListener('click', function (e) { if (e.target === $('modal')) $('modal').classList.add('oculto'); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') $('modal').classList.add('oculto'); });
+  }
+  /* Código de acceso: solo se pide si el administrador lo configuró. Se guarda en este teléfono. */
+  function pedirCodigo(error) {
+    $('cargando').classList.add('oculto');
+    $('vista').innerHTML = '<div class="codigo-caja"><h3>Código de acceso</h3><p>Ingresa el código que te entregó el encargado del Programa Odontológico.</p>' +
+      (error ? '<p class="error">El código no es correcto.</p>' : '') +
+      '<form id="fCodigo"><input id="iCodigo" class="control" autocomplete="off" autocapitalize="characters" inputmode="text" maxlength="30"><button class="btn prim" type="submit">Entrar</button></form></div>';
+    $('fCodigo').onsubmit = function (e) {
+      e.preventDefault();
+      var c = $('iCodigo').value.trim(); if (!c) return;
+      guardarPref('codigo', c);
+      $('vista').innerHTML = ''; $('cargando').classList.remove('oculto');
+      cargarDatos(true);
+    };
+    setTimeout(function () { $('iCodigo').focus(); }, 50);
+  }
+  function iniciar() {
+    if (window.__DEMO__) $('marcaDemo').classList.remove('oculto');
+    enlazar();
+    cargarDatos(false);
+  }
+  function cargarDatos(reintento) {
+    api('obtenerDatosEquipo', leerPref('codigo') || '').then(function (datos) {
+      if (datos && datos.error === 'codigo') { pedirCodigo(reintento || !!leerPref('codigo')); return; }
+      if (datos && datos.offline) {
+        $('avisoOffline').textContent = 'Sin conexión: se muestra el horario guardado el ' + datos.offline + '. Puede no incluir los últimos cambios.';
+        $('avisoOffline').classList.remove('oculto');
+      } else $('avisoOffline').classList.add('oculto');
+      E.datos = datos; E.ix = Motor.indexar(datos);
+      E.est = [0, 1, 2, 3, 4, 5].map(function (i) { return Motor.estandarDelDia(i, datos); });
+      var hoy = Motor.aTexto(new Date());
+      var lista = E.ix.odonto.concat(E.ix.tons, E.ix.apoyo).filter(function (p) { return Motor.actual(p, hoy); });
+      var pref = leerPref('persona');
+      E.persona = lista.some(function (p) { return p.nombre === pref; }) ? pref : '';
+      $('persona').innerHTML = '<option value="">Elige tu nombre</option>' + lista.map(function (p) { return '<option' + (p.nombre === E.persona ? ' selected' : '') + '>' + esc(p.nombre) + '</option>'; }).join('');
+      var modo = leerPref('modo');
+      if (modo === 'mes' || modo === 'semana') { E.modo = modo; Array.prototype.forEach.call($('modo').children, function (x) { x.classList.toggle('activa', x.dataset.m === modo); }); }
+      $('cargando').classList.add('oculto');
+      render();
+    }).catch(function (e) {
+      $('cargando').classList.add('oculto');
+      $('vista').innerHTML = '<div class="error">No se pudo leer el horario: ' + esc(e && e.message ? e.message : e) + '</div>';
+    });
+  }
+  iniciar();
+})();
+</script>
+</body>
+</html>
