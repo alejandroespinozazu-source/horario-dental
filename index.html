@@ -364,21 +364,29 @@ var Motor = (function () {
           if (a.base !== 'FUE' || (!sinVigencia && !vigente(p, fecha))) return;
           a.base = 'CLI'; a.act = 'CLI'; a.evento = e; a.recupera = true; a.etiqueta = e.obs || e.tipo;
         });
+        // Actividades del cargo (reunión, bloqueo de agenda, bodega, otra): también las cumple quien reemplaza.
+        var delCargo = null;
         eventos.forEach(function (e) {
           var t = TIPOS[e.tipo];
           if (!t || t.efecto === 'COB' || t.efecto === 'REE' || t.efecto === 'EXT' || !eventoEnHora(e, h) || !afectaA(e, p.nombre)) return;
           if (a.base === 'FUE') return;
           if (a.base === 'COL' && jornadaCompleta(e) && t.efecto !== 'AUS' && t.efecto !== 'CIE') return;
+          if (t.efecto !== 'AUS' && t.efecto !== 'CIE') delCargo = e;
+          if (a.act === 'AUS' && t.efecto !== 'AUS' && t.efecto !== 'CIE') return; // quien está ausente no asiste a la reunión
           a.act = t.efecto;
           a.evento = e;
           a.etiqueta = e.obs || e.tipo;
         });
-        // Reemplazo: otra persona cumple el horario estándar de quien está ausente.
+        // Reemplazo: otra persona cumple el horario estándar de quien está ausente, incluidas las reuniones
+        // o bloqueos registrados para el cargo en esas horas.
         eventos.forEach(function (e) {
           var t = TIPOS[e.tipo];
           if (!t || t.efecto !== 'REE' || !e.acompanaA || !eventoEnHora(e, h) || !afectaA(e, p.nombre)) return;
           if (a.base === 'FUE') return;
-          a.act = a.base; a.evento = null; a.etiqueta = ETIQUETA[a.base]; a.reemplazo = e.acompanaA;
+          a.reemplazo = e.acompanaA;
+          if (a.act === 'CIE') return;
+          if (delCargo) { a.act = TIPOS[delCargo.tipo].efecto; a.evento = delCargo; a.etiqueta = delCargo.obs || delCargo.tipo; }
+          else { a.act = a.base; a.evento = null; a.etiqueta = ETIQUETA[a.base]; }
         });
         st[p.nombre] = a;
       });
@@ -589,7 +597,7 @@ var Motor = (function () {
           var forzar = !!(dup && st[dup] && st[dup].evento && TIPOS[st[dup].evento.tipo] && TIPOS[st[dup].evento.tipo].pideReemplazo);
           crudas.push({ nivel: 'roja', clave: 'sin|' + o.nombre, texto: visible(ix, st, o.nombre) + ' (' + (P.box[o.nombre] || 'box') + ') queda sin TONS' + (causa ? ' (' + causa + ')' : ''), forzar: forzar,
                         sugerencia: sugB, h: h, apoyo: P.apoyo.length > 0, accion: 'bloqueo', cargo: 'TONS',
-                        ausente: dup && ausH[dup] && ausH[dup][h] ? dup : '', sugBloqueo: sugB, sugReemplazo: sugR,
+                        ausente: dup && ausH[dup] && ausH[dup][h] ? dup : '', sugBloqueo: sugB, sugReemplazo: sugR, nombres: [o.nombre, dup],
                         afectado: visible(ix, st, o.nombre), box: P.box[o.nombre] || '', causa: causa, apoyoTxt: apoyoTxt });
           res.conteo.sinTons++;
         } else if (x.tipo !== 'dupla') {
@@ -612,7 +620,7 @@ var Motor = (function () {
           : sugB;
         crudas.push({ nivel: 'ambar', clave: 'sola|' + t.nombre, texto: visible(ix, st, t.nombre) + ' queda sin odontólogo' + (causa ? ' (' + causa + ')' : ''),
                       sugerencia: sug, h: h, accion: completo ? 'reemplazo' : 'administrativo', cargo: 'Odontólogo/a', sugBloqueo: sugB,
-                      ausente: completo ? dueno : '', grupoR: completo ? 'OD|' + dueno : '', forzar: forzarOd,
+                      ausente: completo ? dueno : '', grupoR: completo ? 'OD|' + dueno : '', forzar: forzarOd, nombres: [t.nombre, dueno],
                       afectado: dueno ? visible(ix, st, dueno) : '', tons: visible(ix, st, t.nombre), box: boxOd, causa: causa });
         res.conteo.tonsSola++;
       });
@@ -721,7 +729,7 @@ var Motor = (function () {
         if (c && c.h === prev + 1) { prev = c.h; continue; }
         out.push({ nivel: ini.nivel, clave: ini.clave, texto: ini.texto, sugerencia: ini.sugerencia, desde: ini.h, hasta: prev + 1, horas: prev + 1 - ini.h, rango: rango(ini.h, prev + 1), apoyo: ini.apoyo,
                    accion: ini.accion || '', cargo: ini.cargo || '', afectado: ini.afectado || '', tons: ini.tons || '', box: ini.box || '', causa: ini.causa || '', apoyoTxt: ini.apoyoTxt || '',
-                   grupoR: ini.grupoR || '', absorbida: !!ini.absorbida, ausente: ini.ausente || '' });
+                   grupoR: ini.grupoR || '', absorbida: !!ini.absorbida, ausente: ini.ausente || '', nombres: ini.nombres || [] });
         if (c) { ini = c; prev = c.h; }
       }
     });
@@ -889,7 +897,19 @@ var Motor = (function () {
   }
 
   /* Solicitudes para Subdirección entre dos fechas: reemplazos (jornada completa) y bloqueos (parcial). */
+  /* Sección del reporte: duplas PRAPS (contrato a honorarios), horario vespertino (desde las 17:00, el viernes
+     desde las 16:00, y el sábado) o diurno. */
+  function seccionDe(ix, nombres, diaIdx, h) {
+    var praps = (nombres || []).some(function (n) {
+      var p = ix.porNombre[n];
+      return p && (/praps|honorario/i.test(p.obs || '') || p.vigDesde || p.vigHasta);
+    });
+    if (praps) return 'PRAPS';
+    if (diaIdx === 5 || h >= 17 || (diaIdx === 4 && h >= 16)) return 'Vespertino';
+    return 'Diurno';
+  }
   function reporteSolicitudes(datos, desde, hasta) {
+    var ixR = indexar(datos);
     var reemplazos = [], bloqueos = [], d = aFecha(desde), fin = aFecha(hasta);
     while (d <= fin) {
       if (diaSemana(d) < DIAS_ATENCION) {
@@ -908,10 +928,13 @@ var Motor = (function () {
               }
               var R = vistos[k];
               R.tramos.push(tramo); R.horas += a.horas;
-              if (!a.absorbida) { R.box = R.box || a.box; R.afectado = R.afectado || a.afectado; R.causa = R.causa || a.causa; }
+              if (!a.absorbida) {
+                R.box = R.box || a.box; R.afectado = R.afectado || a.afectado; R.causa = R.causa || a.causa;
+                R.seccion = R.seccion || seccionDe(ixR, a.nombres, D.diaIdx, a.desde);
+              }
             } else {
-              bloqueos.push({ fecha: f, dia: D.dia, rango: a.rango, horas: a.horas, cargo: a.cargo, box: a.box, afectado: a.afectado,
-                              tons: a.tons, causa: a.causa, apoyoTxt: a.apoyoTxt, nivel: a.nivel });
+              bloqueos.push({ fecha: f, dia: D.dia, rango: a.rango, desde: a.desde, horas: a.horas, cargo: a.cargo, box: a.box, afectado: a.afectado,
+                              tons: a.tons, causa: a.causa, apoyoTxt: a.apoyoTxt, nivel: a.nivel, seccion: seccionDe(ixR, a.nombres, D.diaIdx, a.desde) });
             }
           });
         }
@@ -920,6 +943,7 @@ var Motor = (function () {
     }
     // Une tramos contiguos del mismo box (p. ej. 14:00–15:00 y 15:00–17:00).
     reemplazos.forEach(function (r) {
+      r.seccion = r.seccion || 'Diurno';
       r.tramos.sort(function (a, b) { return (a.box === r.box ? 0 : 1) - (b.box === r.box ? 0 : 1) || a.desde - b.desde; });
       var unidos = [];
       r.tramos.forEach(function (t) {
@@ -949,7 +973,7 @@ var Motor = (function () {
 
   return {
     TIPOS: TIPOS, ACT: ACT, DIAS: DIAS, HORAS: HORAS, DIAS_ATENCION: DIAS_ATENCION, TODOS: TODOS, REPETICIONES: REPETICIONES,
-    listaDuplas: listaDuplas, textoFechas: textoFechas, boxEn: boxEn, leerBox: leerBox, vigente: vigente, actual: actual,
+    listaDuplas: listaDuplas, textoFechas: textoFechas, SECCIONES: ['Diurno', 'Vespertino', 'PRAPS'], boxEn: boxEn, leerBox: leerBox, vigente: vigente, actual: actual,
     ROLES: { ODONTO: ROL_ODONTO, TONS: ROL_TONS, APOYO: ROL_APOYO },
     aFecha: aFecha, aTexto: aTexto, diaSemana: diaSemana, hhmm: hhmm, rango: rango,
     eventoEnFecha: eventoEnFecha, fechasDeEvento: fechasDeEvento, textoRepeticion: textoRepeticion,
