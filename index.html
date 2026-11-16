@@ -719,6 +719,37 @@ var Motor = (function () {
         desde: hs[0], hasta: hs[hs.length - 1] + 1, horas: n, rango: rango(hs[0], hs[hs.length - 1] + 1), accion: 'deuda', cargo: '', afectado: corto(ix, p.nombre),
         tons: '', box: '', causa: '', apoyoTxt: '', grupoR: '', absorbida: false, ausente: p.nombre, nombres: [p.nombre] });
     });
+    // Vespertino per cápita y sábado (no PRAPS): si falta la dupla completa (odontólogo/a y su TONS) no queda nadie en el
+    // box y las reglas anteriores no generan alerta. El turno se mide en los IAAPS, así que igual se informa como reemplazo
+    // de la dupla, para que Dirección indique si se reemplaza a uno, a ambos o a ninguno.
+    var duplasAus = {};
+    porHora.forEach(function (P) {
+      if (P.cerrado) return;
+      ix.odonto.forEach(function (o) {
+        var a = P.st[o.nombre];
+        if (!a || a.act !== 'AUS' || a.base !== 'CLI') return;
+        var t = duplaEn(ix, o.nombre, P.st), b = t && P.st[t];
+        if (!b || b.act !== 'AUS' || b.base !== 'CLI') return;
+        if (seccionDe(ix, [o.nombre, t], wd, P.h) !== 'Vespertino') return;
+        var k = o.nombre + '|' + t;
+        (duplasAus[k] = duplasAus[k] || { od: o.nombre, tons: t, hs: [], causaOd: a.etiqueta, causaT: b.etiqueta }).hs.push(P.h);
+      });
+    });
+    Object.keys(duplasAus).forEach(function (k) {
+      var x = duplasAus[k], tramos = [];
+      x.hs.forEach(function (h) { var u = tramos[tramos.length - 1]; if (u && u.hasta === h) u.hasta = h + 1; else tramos.push({ desde: h, hasta: h + 1 }); });
+      var causa = x.causaOd === x.causaT ? x.causaOd : x.causaOd + ' / ' + x.causaT;
+      var turno = wd === 5 ? 'del sábado' : 'vespertino';
+      tramos.forEach(function (t) {
+        var box = boxEn(ix.porNombre[x.od], wd, t.desde) || '';
+        res.alertas.push({ nivel: 'roja', clave: 'dupla|' + k + '|' + t.desde, grupoR: 'dupla|' + k, dupla: true,
+          texto: 'Dupla completa ausente: ' + corto(ix, x.od) + ' y ' + corto(ix, x.tons) + (box ? ' (' + box + ')' : '') + ' · ' + causa,
+          sugerencia: 'Turno ' + turno + ' per cápita sin atención: informar a Dirección para que indique si se reemplaza a la odontóloga/o, a la TONS o a ambos (actividad medida en los IAAPS).',
+          desde: t.desde, hasta: t.hasta, horas: t.hasta - t.desde, rango: rango(t.desde, t.hasta), accion: 'reemplazo', cargo: 'Dupla',
+          afectado: corto(ix, x.od), tons: corto(ix, x.tons), box: box, causa: causa, apoyoTxt: '', absorbida: false,
+          ausente: x.od, nombres: [x.od, x.tons] });
+      });
+    });
     var ordenN = { roja: 0, ambar: 1, info: 2 };
     res.alertas.sort(function (a, b) { return ordenN[a.nivel] - ordenN[b.nivel] || a.desde - b.desde; });
 
