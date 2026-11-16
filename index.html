@@ -592,7 +592,7 @@ var Motor = (function () {
           var completo = ausenteTodo(dup);
           var sugB = 'Bloquear este período en la agenda o alivianarla' + (apoyoTxt ? ', o pedir apoyo a ' + apoyoTxt + ' (disponible en este horario)' : '');
           var sugR = 'Pedir reemplazo de TONS ' + (completo ? 'para la jornada' : 'para este período') + (apoyoTxt ? '. ' + apoyoTxt + ' está disponible en este horario' : '');
-          if (dup && st[dup] && st[dup].evento && TIPOS[st[dup].evento.tipo] && TIPOS[st[dup].evento.tipo].pideReemplazo) sugR = 'Pedir reemplazo de TONS para este período (no devolverá las horas)';
+          if (dup && st[dup] && st[dup].evento && TIPOS[st[dup].evento.tipo] && TIPOS[st[dup].evento.tipo].pideReemplazo) sugR = 'Pedir reemplazo de TONS para este período' + (esPraps(ix, dup) ? ' (contrato a honorarios: si no hay reemplazo, deberá devolver las horas)' : ' (no devolverá las horas)');
           // La decisión (reemplazo o bloqueo) se toma más abajo, cuando se conocen todas las horas sin TONS del día.
           var forzar = !!(dup && st[dup] && st[dup].evento && TIPOS[st[dup].evento.tipo] && TIPOS[st[dup].evento.tipo].pideReemplazo);
           // Vespertino per cápita (no PRAPS): siempre se pide reemplazo, porque la atención hasta las 20:00 se mide (IAAPS).
@@ -619,7 +619,7 @@ var Motor = (function () {
         // La TONS no tiene agenda propia que bloquear o alivianar: en estas horas se dedica a tareas administrativas.
         var sugB = 'La TONS queda para tareas administrativas en este período';
         var sug = completo
-          ? 'Pedir reemplazo de odontólogo/a' + (boxOd ? ' para el ' + boxOd : '') + (forzarOd ? ' (no devolverá las horas)' : vespOd ? (wd === 5 ? ' en el turno del sábado' : ' en el turno vespertino') : ' durante la jornada') + '; si no hay reemplazo, la TONS queda para tareas administrativas'
+          ? 'Pedir reemplazo de odontólogo/a' + (boxOd ? ' para el ' + boxOd : '') + (forzarOd ? (esPraps(ix, dueno) ? ' (contrato a honorarios: si no hay reemplazo, deberá devolver las horas)' : ' (no devolverá las horas)') : vespOd ? (wd === 5 ? ' en el turno del sábado' : ' en el turno vespertino') : ' durante la jornada') + '; si no hay reemplazo, la TONS queda para tareas administrativas'
           : sugB;
         crudas.push({ nivel: 'ambar', clave: 'sola|' + t.nombre, texto: visible(ix, st, t.nombre) + ' queda sin odontólogo' + (causa ? ' (' + causa + ')' : ''),
                       sugerencia: sug, h: h, accion: completo ? 'reemplazo' : 'administrativo', cargo: 'Odontólogo/a', sugBloqueo: sugB,
@@ -703,6 +703,24 @@ var Motor = (function () {
       c.accion = 'administrativo'; c.sugerencia = c.sugBloqueo; c.grupoR = ''; c.ausente = '';
     });
     res.alertas = agrupar(crudas);
+    // Duplas PRAPS a honorarios: horas de un permiso que pide reemplazo y que aún no tienen reemplazo registrado.
+    res.deudaPraps = {};
+    ix.activos.forEach(function (p) {
+      if (!esPraps(ix, p.nombre)) return;
+      var hs = porHora.filter(function (P) {
+        var a = P.st[p.nombre];
+        return !P.cerrado && a && a.evento && TIPOS[a.evento.tipo] && TIPOS[a.evento.tipo].pideReemplazo;
+      }).map(function (P) { return P.h; });
+      if (!hs.length) return;
+      res.deudaPraps[p.nombre] = hs.length;
+      var n = hs.length, txt = n + (n === 1 ? ' hora' : ' horas');
+      res.alertas.push({ nivel: 'ambar', clave: 'deuda|' + p.nombre, texto: corto(ix, p.nombre) + ': ' + txt + ' de permiso sin reemplazo registrado',
+        sugerencia: 'Si no se consigue reemplazo, deberá devolver ' + (n === 1 ? 'esta hora' : 'estas ' + txt) + ' (contrato a honorarios). Quedan como horas por devolver en Saldos.',
+        desde: hs[0], hasta: hs[hs.length - 1] + 1, horas: n, rango: rango(hs[0], hs[hs.length - 1] + 1), accion: 'deuda', cargo: '', afectado: corto(ix, p.nombre),
+        tons: '', box: '', causa: '', apoyoTxt: '', grupoR: '', absorbida: false, ausente: p.nombre, nombres: [p.nombre] });
+    });
+    var ordenN = { roja: 0, ambar: 1, info: 2 };
+    res.alertas.sort(function (a, b) { return ordenN[a.nivel] - ordenN[b.nivel] || a.desde - b.desde; });
 
     // horas de apoyo disponibles
     ix.apoyo.forEach(function (p) {
@@ -877,6 +895,40 @@ var Motor = (function () {
     });
     return out;
   }
+  /* Duplas PRAPS a honorarios: horas de su horario cubiertas por un permiso que pide reemplazo y que no tienen un
+     reemplazo registrado. Si no se consigue reemplazo, la persona debe devolverlas. */
+  function horasSinReemplazo(datos, persona, desde, hasta) {
+    var ix = indexar(datos);
+    if (!esPraps(ix, persona)) return [];
+    var ree = (datos.eventos || []).filter(function (e) { return TIPOS[e.tipo] && TIPOS[e.tipo].efecto === 'REE' && afectaA(e, persona); });
+    var porFecha = {};
+    (datos.eventos || []).forEach(function (ev) {
+      if (!TIPOS[ev.tipo] || !TIPOS[ev.tipo].pideReemplazo || !afectaA(ev, persona)) return;
+      fechasDeEvento(ev, 400).forEach(function (f) {
+        if (f < desde || f > hasta) return;
+        (porFecha[f] = porFecha[f] || []).push(ev);
+      });
+    });
+    var out = [];
+    Object.keys(porFecha).sort().forEach(function (f) {
+      if (cerradoEnFecha(datos, f)) return;
+      var fila = ((datos.estandar || {})[persona] || {})[DIAS[diaSemana(aFecha(f))]] || [];
+      var sin = HORAS.filter(function (h, i) {
+        var v = fila[i] || 'Fuera de jornada';
+        if (v === 'Colación' || v === 'Fuera de jornada') return false;
+        if (!porFecha[f].some(function (ev) { return eventoEnHora(ev, h); })) return false;
+        return !ree.some(function (e) { return eventoEnFecha(e, f) && eventoEnHora(e, h); });
+      });
+      if (!sin.length) return;
+      out.push({ fecha: f, dias: 0, horas: sin.length, desc: porFecha[f][0].tipo + ' · sin reemplazo', sinReemplazo: true,
+                 ids: porFecha[f].map(function (e) { return e.id; }) });
+    });
+    return out;
+  }
+  function esPraps(ix, n) {
+    var p = n && ix.porNombre[n];
+    return !!p && (/praps|honorario/i.test(p.obs || '') || !!p.vigDesde || !!p.vigHasta);
+  }
   function calcularSaldo(datos, persona, tipo, periodo) {
     var cfg = configSaldo(datos, tipo);
     if (!cfg) return null;
@@ -884,9 +936,13 @@ var Motor = (function () {
     var r = rangoPeriodo(regla, periodo);
     var horas = cfg.unidad === 'horas';
     var usos = usosDe(datos, tipo, persona, r[0], r[1], horas);
-    var usado = usos.reduce(function (s, u) { return s + (horas ? u.horas : u.dias); }, 0);
     // Permiso con devolución: lo "asignado" son las horas ya recuperadas; el saldo negativo son horas por devolver.
+    // También se deben las horas de un permiso de PRAPS que pidió reemplazo y no lo tiene registrado.
     var devuelve = TIPOS[tipo] && TIPOS[tipo].devuelveCon;
+    var sinR = devuelve ? horasSinReemplazo(datos, persona, r[0], r[1]) : [];
+    var horasSinR = sinR.reduce(function (s, u) { return s + u.horas; }, 0);
+    if (sinR.length) usos = usos.concat(sinR).sort(function (a, b) { return a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0; });
+    var usado = usos.reduce(function (s, u) { return s + (horas ? u.horas : u.dias); }, 0);
     var recup = devuelve ? usosDe(datos, devuelve, persona, r[0], r[1], true) : [];
     var recuperado = recup.reduce(function (s, u) { return s + u.horas; }, 0);
     var ajustes = (datos.ajustes || []).filter(function (a) {
@@ -896,7 +952,7 @@ var Motor = (function () {
     var cupo = base + recuperado + ajustes.reduce(function (s, a) { return s + (+a.cantidad || 0); }, 0);
     return { persona: persona, tipo: tipo, periodo: periodo, regla: regla, unidad: cfg.unidad || 'días',
              base: base, ajustes: ajustes, cupo: cupo, usado: usado, saldo: cupo - usado, usos: usos,
-             devolucion: !!devuelve, recuperado: recuperado, recuperaciones: recup,
+             devolucion: !!devuelve, recuperado: recuperado, recuperaciones: recup, sinReemplazo: horasSinR,
              conCupo: base !== 0 || ajustes.length > 0 || !!devuelve };
   }
 
@@ -927,7 +983,8 @@ var Motor = (function () {
               var tramo = { box: a.box, afectado: a.afectado, rango: a.rango, desde: a.desde, hasta: a.hasta, absorbida: a.absorbida };
               if (!vistos[k]) {
                 vistos[k] = { fecha: f, dia: D.dia, cargo: a.cargo, box: '', afectado: '', tons: a.tons, causa: '', ausente: a.ausente,
-                              rangos: [], tramos: [], horas: 0, apoyoTxt: a.apoyoTxt, nivel: a.nivel };
+                              rangos: [], tramos: [], horas: 0, apoyoTxt: a.apoyoTxt, nivel: a.nivel,
+                              deuda: a.ausente && D.deudaPraps[a.ausente] ? D.deudaPraps[a.ausente] : 0 };
                 reemplazos.push(vistos[k]);
               }
               var R = vistos[k];
@@ -985,7 +1042,7 @@ var Motor = (function () {
     calcularDia: calcularDia, calcularMes: calcularMes, estandarDelDia: estandarDelDia,
     impacto: impacto, horarioApoyo: horarioApoyo, indexar: indexar,
     REGLAS: REGLAS, periodoDe: periodoDe, rangoPeriodo: rangoPeriodo, periodosCercanos: periodosCercanos,
-    configSaldo: configSaldo, usosDe: usosDe, calcularSaldo: calcularSaldo,
+    configSaldo: configSaldo, usosDe: usosDe, calcularSaldo: calcularSaldo, horasSinReemplazo: horasSinReemplazo, esPraps: function (datos, n) { return esPraps(indexar(datos), n); },
     reporteSolicitudes: reporteSolicitudes
   };
 })();
