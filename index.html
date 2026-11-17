@@ -345,11 +345,25 @@ var Motor = (function () {
   function visible(ix, st, nombre) { return st && st[nombre] && st[nombre].reemplazo ? st[nombre].reemplazo : corto(ix, nombre); }
 
   /* ---------- cálculo de un día ---------- */
-  function calcularBase(fecha, diaIdx, datos, eventos, ix, sinVigencia) {
+  function calcularBase(fecha, diaIdx, datos, eventos, ix, sinVigencia, esReferencia) {
     var dia = DIAS[diaIdx];
     var est = datos.estandar || {};
     var horas = [];
     var previo = {};
+    // Coberturas del mismo día sin ausencias (permisos, licencias, feriados): una ausencia no debe quitarle a otra
+    // odontóloga/o la TONS que la acompañaba; las TONS libres cubren solo lo que queda sin dupla.
+    var referencia = null;
+    if (!esReferencia) {
+      var sinAus = eventos.filter(function (e) { return !TIPOS[e.tipo] || TIPOS[e.tipo].efecto !== 'AUS'; });
+      if (sinAus.length < eventos.length) {
+        referencia = {};
+        calcularBase(fecha, diaIdx, datos, sinAus, ix, sinVigencia, true).forEach(function (H) {
+          var m = {};
+          Object.keys(H.asig).forEach(function (d) { if (H.asig[d].tipo === 'cobertura') m[d] = H.asig[d].tons; });
+          referencia[H.h] = m;
+        });
+      }
+    }
 
     HORAS.forEach(function (h, i) {
       var st = {};
@@ -417,7 +431,14 @@ var Motor = (function () {
           return false;
         });
       });
-      // 3) cobertura automática con TONS libres: primero se mantiene a quien ya acompañaba en la hora anterior
+      // 3) cobertura automática con TONS libres: primero la que acompañaría a esa hora si no hubiera ausencias,
+      //    luego se mantiene a quien ya acompañaba en la hora anterior
+      if (referencia && referencia[h]) clinicos.forEach(function (o) {
+        var t = referencia[h][o.nombre];
+        if (asig[o.nombre] || !t || usado[t] || !enPool[t]) return;
+        asig[o.nombre] = { tons: t, tipo: 'cobertura' };
+        usado[t] = true;
+      });
       clinicos.forEach(function (o) {
         var prev = previo[o.nombre];
         if (asig[o.nombre] || !prev || usado[prev] || !enPool[prev]) return;
