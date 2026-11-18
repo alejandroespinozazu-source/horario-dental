@@ -154,7 +154,7 @@
 var Motor = (function () {
   'use strict';
 
-  var TIPOS = {"Feriado legal (vacaciones)": {"efecto": "AUS", "fondo": "#DFF0D8", "texto": "#2E5E1E", "grupo": "Ausencia"}, "Permiso administrativo": {"efecto": "AUS", "fondo": "#D7F0F7", "texto": "#0B5567", "grupo": "Ausencia"}, "Licencia médica": {"efecto": "AUS", "fondo": "#FBE3EC", "texto": "#8A1846", "grupo": "Ausencia"}, "Capacitación": {"efecto": "AUS", "fondo": "#E4E7F6", "texto": "#2C3A8C", "grupo": "Ausencia"}, "Devolución de horas": {"efecto": "AUS", "fondo": "#F3EBD9", "texto": "#6A4B12", "grupo": "Ausencia"}, "Reunión / comité": {"efecto": "REU", "fondo": "#ECE2F5", "texto": "#4E2A72", "grupo": "Actividad"}, "Censo / bloqueo de agenda": {"efecto": "BLQ", "fondo": "#E3E8EF", "texto": "#2F3E52", "grupo": "Actividad"}, "Bodega / inventario": {"efecto": "BOD", "fondo": "#FBE1CC", "texto": "#7A3A0B", "grupo": "Actividad"}, "Otra actividad no clínica": {"efecto": "OTR", "fondo": "#ECECEC", "texto": "#444444", "grupo": "Actividad"}, "Cobertura manual": {"efecto": "COB", "fondo": "#FFF2CC", "texto": "#6B4E00", "grupo": "Cobertura"}, "Reemplazo": {"efecto": "REE", "fondo": "#F6E1F3", "texto": "#6E2063", "grupo": "Cobertura"}, "Permiso con devolución de horas": {"efecto": "AUS", "fondo": "#E6F0FA", "texto": "#1B4F80", "grupo": "Honorarios (PRAPS)", "devuelveCon": "Recuperación de horas"}, "Recuperación de horas": {"efecto": "EXT", "fondo": "#DDF3E6", "texto": "#1E6B3A", "grupo": "Honorarios (PRAPS)"}, "Permiso sin devolución (pedir reemplazo)": {"efecto": "AUS", "fondo": "#FBE7DA", "texto": "#8A3B12", "grupo": "Honorarios (PRAPS)", "pideReemplazo": true}, "Feriado nacional / cierre": {"efecto": "CIE", "fondo": "#D9D9D9", "texto": "#333333", "grupo": "Cierre"}, "Ausencia": {"efecto": "AUS", "fondo": "#E7E9EC", "texto": "#3B4450", "grupo": "Oculto"}};
+  var TIPOS = {"Feriado legal (vacaciones)": {"efecto": "AUS", "fondo": "#DFF0D8", "texto": "#2E5E1E", "grupo": "Ausencia"}, "Permiso administrativo": {"efecto": "AUS", "fondo": "#D7F0F7", "texto": "#0B5567", "grupo": "Ausencia"}, "Licencia médica": {"efecto": "AUS", "fondo": "#FBE3EC", "texto": "#8A1846", "grupo": "Ausencia"}, "Capacitación": {"efecto": "AUS", "fondo": "#E4E7F6", "texto": "#2C3A8C", "grupo": "Ausencia"}, "Devolución de horas": {"efecto": "AUS", "fondo": "#F3EBD9", "texto": "#6A4B12", "grupo": "Ausencia"}, "Reunión / comité": {"efecto": "REU", "fondo": "#ECE2F5", "texto": "#4E2A72", "grupo": "Actividad"}, "Censo / bloqueo de agenda": {"efecto": "BLQ", "fondo": "#E3E8EF", "texto": "#2F3E52", "grupo": "Actividad"}, "Bodega / inventario": {"efecto": "BOD", "fondo": "#FBE1CC", "texto": "#7A3A0B", "grupo": "Actividad"}, "Otra actividad no clínica": {"efecto": "OTR", "fondo": "#ECECEC", "texto": "#444444", "grupo": "Actividad"}, "Cobertura manual": {"efecto": "COB", "fondo": "#FFF2CC", "texto": "#6B4E00", "grupo": "Cobertura"}, "Reemplazo": {"efecto": "REE", "fondo": "#F6E1F3", "texto": "#6E2063", "grupo": "Cobertura"}, "Cambio de box": {"efecto": "BOX", "fondo": "#E0F2F1", "texto": "#0E5E5C", "grupo": "Cobertura"}, "Permiso con devolución de horas": {"efecto": "AUS", "fondo": "#E6F0FA", "texto": "#1B4F80", "grupo": "Honorarios (PRAPS)", "devuelveCon": "Recuperación de horas"}, "Recuperación de horas": {"efecto": "EXT", "fondo": "#DDF3E6", "texto": "#1E6B3A", "grupo": "Honorarios (PRAPS)"}, "Permiso sin devolución (pedir reemplazo)": {"efecto": "AUS", "fondo": "#FBE7DA", "texto": "#8A3B12", "grupo": "Honorarios (PRAPS)", "pideReemplazo": true}, "Feriado nacional / cierre": {"efecto": "CIE", "fondo": "#D9D9D9", "texto": "#333333", "grupo": "Cierre"}, "Ausencia": {"efecto": "AUS", "fondo": "#E7E9EC", "texto": "#3B4450", "grupo": "Oculto"}};
   var ACT = {
     'Clínica': 'CLI', 'Gestión': 'GES', 'Administrativo': 'ADM', 'Bodega': 'BOD',
     'Colación': 'COL', 'Disponible (apoyo)': 'DIS', 'Fuera de jornada': 'FUE'
@@ -225,11 +225,36 @@ var Motor = (function () {
     var y = function (xs) { return xs.length > 1 ? xs.slice(0, -1).join(', ') + ' y ' + xs[xs.length - 1] : String(xs[0]); };
     return grupos.map(function (g) { return y(g.dias) + ' de ' + g.mes; }).join(', ');
   }
-  function eventoEnHora(ev, h) {
+  function eventoEnHora(ev, h, fin) {
     var a = hora(ev.hIni), b = hora(ev.hFin);
     if (a === null || b === null) return true;
-    return h + 1 > a && h < b;
+    return (fin === undefined ? h + 1 : fin) > a && h < b;
   }
+  /* Horas (con fracción) de un bloque de una hora que cubre un evento: 1 si es jornada completa. */
+  function cubreHora(ev, h) {
+    var a = hora(ev.hIni), b = hora(ev.hFin);
+    if (a === null || b === null) return 1;
+    return Math.max(0, Math.min(b, h + 1) - Math.max(a, h));
+  }
+  /* Bloques del día: uno por hora, salvo que un evento empiece o termine a media hora (por ejemplo, 16:30);
+     entonces esa hora se divide en dos tramos. i es la fila del horario estándar (por hora). */
+  function bloquesDia(eventos) {
+    var cortes = {};
+    (eventos || []).forEach(function (e) {
+      [hora(e.hIni), hora(e.hFin)].forEach(function (x) {
+        if (x === null || x % 1 === 0 || x <= HORAS[0] || x >= HORAS[HORAS.length - 1] + 1) return;
+        var k = Math.floor(x);
+        (cortes[k] = cortes[k] || []).indexOf(x) < 0 && cortes[k].push(x);
+      });
+    });
+    var out = [];
+    HORAS.forEach(function (h, i) {
+      var cs = (cortes[h] || []).sort(function (a, b) { return a - b; }), ini = h;
+      cs.concat([h + 1]).forEach(function (fin) { out.push({ h: ini, fin: fin, dur: fin - ini, i: i }); ini = fin; });
+    });
+    return out;
+  }
+  function textoHoras(n) { var t = String(Math.round(n * 100) / 100).replace('.', ','); return t + (n === 1 ? ' hora' : ' horas'); }
   function jornadaCompleta(ev) { return hora(ev.hIni) === null || hora(ev.hFin) === null; }
   function afectaA(ev, nombre) {
     var ps = ev.personas || [];
@@ -345,7 +370,8 @@ var Motor = (function () {
   function visible(ix, st, nombre) { return st && st[nombre] && st[nombre].reemplazo ? st[nombre].reemplazo : corto(ix, nombre); }
 
   /* ---------- cálculo de un día ---------- */
-  function calcularBase(fecha, diaIdx, datos, eventos, ix, sinVigencia, esReferencia) {
+  function calcularBase(fecha, diaIdx, datos, eventos, ix, sinVigencia, esReferencia, bloques) {
+    bloques = bloques || bloquesDia(eventos);
     var dia = DIAS[diaIdx];
     var est = datos.estandar || {};
     var horas = [];
@@ -357,7 +383,7 @@ var Motor = (function () {
       var sinAus = eventos.filter(function (e) { return !TIPOS[e.tipo] || TIPOS[e.tipo].efecto !== 'AUS'; });
       if (sinAus.length < eventos.length) {
         referencia = {};
-        calcularBase(fecha, diaIdx, datos, sinAus, ix, sinVigencia, true).forEach(function (H) {
+        calcularBase(fecha, diaIdx, datos, sinAus, ix, sinVigencia, true, bloques).forEach(function (H) {
           var m = {};
           Object.keys(H.asig).forEach(function (d) { if (H.asig[d].tipo === 'cobertura') m[d] = H.asig[d].tons; });
           referencia[H.h] = m;
@@ -365,7 +391,8 @@ var Motor = (function () {
       }
     }
 
-    HORAS.forEach(function (h, i) {
+    bloques.forEach(function (B) {
+      var h = B.h, i = B.i, fin = B.fin;
       var st = {};
       ix.activos.forEach(function (p) {
         var valor = ((est[p.nombre] || {})[dia] || [])[i] || 'Fuera de jornada';
@@ -374,15 +401,22 @@ var Motor = (function () {
         // Recuperación de horas: atiende en un horario que no es el suyo (en su box y con su dupla).
         eventos.forEach(function (e) {
           var t = TIPOS[e.tipo];
-          if (!t || t.efecto !== 'EXT' || !eventoEnHora(e, h) || !afectaA(e, p.nombre)) return;
+          if (!t || t.efecto !== 'EXT' || !eventoEnHora(e, h, fin) || !afectaA(e, p.nombre)) return;
           if (a.base !== 'FUE' || (!sinVigencia && !vigente(p, fecha))) return;
           a.base = 'CLI'; a.act = 'CLI'; a.evento = e; a.recupera = true; a.etiqueta = e.obs || e.tipo;
+          if (e.box) a.box = e.box;
+        });
+        // Cambio de box: atiende normalmente, pero en otro box en esas horas.
+        eventos.forEach(function (e) {
+          var t = TIPOS[e.tipo];
+          if (!t || t.efecto !== 'BOX' || !e.box || !eventoEnHora(e, h, fin) || !afectaA(e, p.nombre)) return;
+          a.box = e.box;
         });
         // Actividades del cargo (reunión, bloqueo de agenda, bodega, otra): también las cumple quien reemplaza.
         var delCargo = null;
         eventos.forEach(function (e) {
           var t = TIPOS[e.tipo];
-          if (!t || t.efecto === 'COB' || t.efecto === 'REE' || t.efecto === 'EXT' || !eventoEnHora(e, h) || !afectaA(e, p.nombre)) return;
+          if (!t || t.efecto === 'COB' || t.efecto === 'REE' || t.efecto === 'EXT' || t.efecto === 'BOX' || !eventoEnHora(e, h, fin) || !afectaA(e, p.nombre)) return;
           if (a.base === 'FUE') return;
           if (a.base === 'COL' && jornadaCompleta(e) && t.efecto !== 'AUS' && t.efecto !== 'CIE') return;
           // Reuniones, censos, bloqueos y otras actividades del cargo también las cumple quien reemplaza;
@@ -397,7 +431,7 @@ var Motor = (function () {
         // o bloqueos registrados para el cargo en esas horas.
         eventos.forEach(function (e) {
           var t = TIPOS[e.tipo];
-          if (!t || t.efecto !== 'REE' || !e.acompanaA || !eventoEnHora(e, h) || !afectaA(e, p.nombre)) return;
+          if (!t || t.efecto !== 'REE' || !e.acompanaA || !eventoEnHora(e, h, fin) || !afectaA(e, p.nombre)) return;
           if (a.base === 'FUE') return;
           a.reemplazo = e.acompanaA;
           if (a.act === 'CIE') return;
@@ -421,7 +455,7 @@ var Motor = (function () {
       // 1) coberturas manuales registradas
       eventos.forEach(function (e) {
         var t = TIPOS[e.tipo];
-        if (!t || t.efecto !== 'COB' || !eventoEnHora(e, h)) return;
+        if (!t || t.efecto !== 'COB' || !eventoEnHora(e, h, fin)) return;
         var d = e.acompanaA;
         if (!d || !st[d] || st[d].act !== 'CLI' || asig[d]) return;
         (e.personas || []).some(function (n) {
@@ -470,7 +504,7 @@ var Motor = (function () {
       // Se recuerda la última TONS de cada odontólogo aunque haya una pausa (por ejemplo, la colación).
       Object.keys(asig).forEach(function (d) { previo[d] = asig[d].tons; });
 
-      horas.push({ h: h, st: st, asig: asig, usado: usado, clinicos: clinicos });
+      horas.push({ h: h, fin: fin, dur: B.dur, st: st, asig: asig, usado: usado, clinicos: clinicos });
     });
     return horas;
   }
@@ -490,14 +524,14 @@ var Motor = (function () {
 
     // Columnas por box: en un mismo box pueden atender distintos odontólogos/as según la hora (diurno y vespertino),
     // y un odontólogo/a puede cambiar de box en algunas horas (excepciones del campo Box).
-    var boxDe = function (o, h) { return boxEn(o, wd, h) || o.nombre; };
+    var boxDe = function (o, h, st) { return (st && st[o.nombre] && st[o.nombre].box) || boxEn(o, wd, h) || o.nombre; };
     var porBox = [], idxBox = {};
     var agregarBox = function (k) { if (idxBox[k] === undefined) { idxBox[k] = porBox.length; porBox.push({ box: k, miembros: [], programados: [] }); } return porBox[idxBox[k]]; };
     ix.odonto.forEach(function (o) { agregarBox(boxDe(o, HORAS[0])).miembros.push(o); });
     horas.forEach(function (H) {
       ix.odonto.forEach(function (o) {
         if (H.st[o.nombre].base === 'FUE') return;
-        var c = agregarBox(boxDe(o, H.h));
+        var c = agregarBox(boxDe(o, H.h, H.st));
         if (c.programados.indexOf(o) < 0) c.programados.push(o);
       });
     });
@@ -513,7 +547,7 @@ var Motor = (function () {
     });
     // Quiénes atienden en un box a una hora: los que tienen ese box a esa hora; primero los que están en clínica.
     var enElBox = function (c, st, h) {
-      return ix.odonto.filter(function (o) { return boxDe(o, h) === c.box && st[o.nombre].base !== 'FUE'; })
+      return ix.odonto.filter(function (o) { return boxDe(o, h, st) === c.box && st[o.nombre].base !== 'FUE'; })
         .sort(function (a, b) { return (st[a.nombre].act === 'CLI' ? 0 : 1) - (st[b.nombre].act === 'CLI' ? 0 : 1); });
     };
     var quienEnBox = function (c, st, h) {
@@ -527,11 +561,11 @@ var Motor = (function () {
       var cerrado = ix.activos.length > 0 && ix.activos.every(function (p) { return st[p.nombre].act === 'CIE' || st[p.nombre].base === 'FUE'; }) &&
                     ix.activos.some(function (p) { return st[p.nombre].act === 'CIE'; });
       var libreHora = ix.activos.every(function (p) { return st[p.nombre].act === 'CIE' || st[p.nombre].base === 'FUE'; });
-      if (cerrado || libreHora) cerradoHoras++;
+      if (cerrado || libreHora) cerradoHoras += H.dur;
       if (cerrado) hayCierre = true;
 
       var boxHora = {};
-      ix.odonto.forEach(function (o) { boxHora[o.nombre] = boxDe(o, h); });
+      ix.odonto.forEach(function (o) { boxHora[o.nombre] = boxDe(o, h, st); });
       var boxes = columnas.map(function (col) {
         var o = quienEnBox(col, st, h), a = st[o.nombre], c;
         if (boxHora[o.nombre] !== col.box) return { clase: 'fh', texto: 'Fuera de horario' };
@@ -566,7 +600,7 @@ var Motor = (function () {
       });
 
       var apoyoDisp = ix.apoyo.filter(function (p) { return st[p.nombre].act === 'DIS' && !H.usado[p.nombre]; }).map(function (p) { return p.nombre; });
-      porHora.push({ h: h, boxes: boxes, fuera: fuera, apoyo: apoyoDisp, cerrado: cerrado, box: boxHora, ocupados: ocupados,
+      porHora.push({ h: h, fin: H.fin, dur: H.dur, boxes: boxes, fuera: fuera, apoyo: apoyoDisp, cerrado: cerrado, box: boxHora, ocupados: ocupados,
                      asig: asig, st: st, duplasAtendiendo: Object.keys(asig).length });
     });
 
@@ -583,22 +617,22 @@ var Motor = (function () {
       ix.odonto.concat(ix.tonsTodas).forEach(function (p) {
         var a = P.st[p.nombre];
         if (a.base === 'FUE' || a.base === 'COL') return;
-        horasProg[p.nombre] = (horasProg[p.nombre] || 0) + 1;
+        horasProg[p.nombre] = (horasProg[p.nombre] || 0) + P.dur;
         (progH[p.nombre] = progH[p.nombre] || {})[P.h] = true;
         if (['AUS', 'REU', 'BLQ', 'BOD', 'OTR'].indexOf(a.act) >= 0) {
-          horasAus[p.nombre] = (horasAus[p.nombre] || 0) + 1;
+          horasAus[p.nombre] = (horasAus[p.nombre] || 0) + P.dur;
           if (a.act !== a.base) (ausH[p.nombre] = ausH[p.nombre] || {})[P.h] = true; // ausencia por un evento, no por su horario
         }
       });
       ix.odonto.forEach(function (o) {
         if (P.st[o.nombre].act !== 'CLI') return;
-        horasClin[o.nombre] = (horasClin[o.nombre] || 0) + 1;
-        if (!P.asig[o.nombre]) horasSin[o.nombre] = (horasSin[o.nombre] || 0) + 1;
+        horasClin[o.nombre] = (horasClin[o.nombre] || 0) + P.dur;
+        if (!P.asig[o.nombre]) horasSin[o.nombre] = (horasSin[o.nombre] || 0) + P.dur;
       });
       ix.tonsTodas.forEach(function (t) {
         if (P.st[t.nombre].act !== 'CLI') return;
-        horasCliT[t.nombre] = (horasCliT[t.nombre] || 0) + 1;
-        if (!tonsUsada(P, t.nombre)) horasSola[t.nombre] = (horasSola[t.nombre] || 0) + 1;
+        horasCliT[t.nombre] = (horasCliT[t.nombre] || 0) + P.dur;
+        if (!tonsUsada(P, t.nombre)) horasSola[t.nombre] = (horasSola[t.nombre] || 0) + P.dur;
       });
     });
     // Ausente toda la jornada: todas sus horas programadas están ocupadas por una ausencia o actividad fuera del box.
@@ -606,7 +640,7 @@ var Motor = (function () {
     var crudas = [];
     porHora.forEach(function (P) {
       if (P.cerrado) return;
-      var st = P.st, h = P.h;
+      var st = P.st, h = P.h, fin = P.fin, dur = P.dur;
       var apoyoTxt = P.apoyo.map(function (n) { return corto(ix, n); }).join(', ');
       ix.odonto.forEach(function (o) {
         if (st[o.nombre].act !== 'CLI') return;
@@ -626,13 +660,13 @@ var Motor = (function () {
           // Vespertino per cápita (no PRAPS): siempre se pide reemplazo, porque la atención hasta las 20:00 se mide (IAAPS).
           var vespPC = seccionDe(ix, [o.nombre, dup], wd, h) === 'Vespertino';
           crudas.push({ nivel: 'roja', clave: 'sin|' + o.nombre, texto: visible(ix, st, o.nombre) + ' (' + (P.box[o.nombre] || 'box') + ') queda sin TONS' + (causa ? ' (' + causa + ')' : ''), forzar: forzar, vespPC: vespPC, sab: wd === 5,
-                        sugerencia: sugB, h: h, apoyo: P.apoyo.length > 0, accion: 'bloqueo', cargo: 'TONS',
+                        sugerencia: sugB, h: h, fin: fin, apoyo: P.apoyo.length > 0, accion: 'bloqueo', cargo: 'TONS',
                         ausente: dup && ausH[dup] && ausH[dup][h] ? dup : '', sugBloqueo: sugB, sugReemplazo: sugR, nombres: [o.nombre, dup],
                         afectado: visible(ix, st, o.nombre), box: P.box[o.nombre] || '', causa: causa, apoyoTxt: apoyoTxt });
-          res.conteo.sinTons++;
+          res.conteo.sinTons += dur;
         } else if (x.tipo !== 'dupla') {
-          crudas.push({ nivel: 'info', clave: 'cob|' + o.nombre + '|' + x.tons, texto: visible(ix, st, x.tons) + ' acompaña a ' + visible(ix, st, o.nombre) + ' (' + (P.box[o.nombre] || 'box') + ')' + (x.tipo === 'manual' ? ', cobertura registrada' : ', cobertura automática'), sugerencia: '', h: h });
-          res.conteo.cobertura++;
+          crudas.push({ nivel: 'info', clave: 'cob|' + o.nombre + '|' + x.tons, texto: visible(ix, st, x.tons) + ' acompaña a ' + visible(ix, st, o.nombre) + ' (' + (P.box[o.nombre] || 'box') + ')' + (x.tipo === 'manual' ? ', cobertura registrada' : ', cobertura automática'), sugerencia: '', h: h, fin: fin });
+          res.conteo.cobertura += dur;
         }
       });
       ix.tonsTodas.forEach(function (t) {
@@ -650,21 +684,21 @@ var Motor = (function () {
           ? 'Pedir reemplazo de odontólogo/a' + (boxOd ? ' para el ' + boxOd : '') + (forzarOd ? (esPraps(ix, dueno) ? ' (contrato a honorarios: si no hay reemplazo, deberá devolver las horas)' : ' (no devolverá las horas)') : vespOd ? (wd === 5 ? ' en el turno del sábado' : ' en el turno vespertino') : ' durante la jornada') + '; si no hay reemplazo, la TONS queda para tareas administrativas'
           : sugB;
         crudas.push({ nivel: 'ambar', clave: 'sola|' + t.nombre, texto: visible(ix, st, t.nombre) + ' queda sin odontólogo' + (causa ? ' (' + causa + ')' : ''),
-                      sugerencia: sug, h: h, accion: completo ? 'reemplazo' : 'administrativo', cargo: 'Odontólogo/a', sugBloqueo: sugB,
+                      sugerencia: sug, h: h, fin: fin, accion: completo ? 'reemplazo' : 'administrativo', cargo: 'Odontólogo/a', sugBloqueo: sugB,
                       ausente: completo ? dueno : '', grupoR: completo ? 'OD|' + dueno : '', forzar: forzarOd, vespPC: vespOd, nombres: [t.nombre, dueno],
                       afectado: dueno ? visible(ix, st, dueno) : '', tons: visible(ix, st, t.nombre), box: boxOd, causa: causa });
-        res.conteo.tonsSola++;
+        res.conteo.tonsSola += dur;
       });
       P.ocupados.forEach(function (x) {
         crudas.push({ nivel: 'roja', clave: 'box|' + x.box, texto: x.box + ' ocupado: ' + x.nombres.join(' y ') + ' atienden a la misma hora',
-                      sugerencia: 'Cambiar el horario de la recuperación o usar otro box', h: h });
+                      sugerencia: 'Cambiar el horario de la recuperación o elegir otro box en el evento', h: h, fin: fin });
       });
       if (estandar) {
-        var e = estandar.horas[HORAS.indexOf(h)];
+        var e = estandar.horas.filter(function (x) { return x.h <= h && x.fin > h; })[0];
         // Solo cuando normalmente atienden dos o más duplas: si hay una sola (vespertino, sábado), ya la avisa su propia alerta.
         if (e && e.duplasAtendiendo > 1 && P.duplasAtendiendo === 0) {
-          crudas.push({ nivel: 'roja', clave: 'unidad', texto: 'La unidad queda sin ninguna dupla atendiendo', sugerencia: 'Revisar si se puede mover alguna actividad no clínica a otro horario', h: h });
-          res.conteo.sinDupla++;
+          crudas.push({ nivel: 'roja', clave: 'unidad', texto: 'La unidad queda sin ninguna dupla atendiendo', sugerencia: 'Revisar si se puede mover alguna actividad no clínica a otro horario', h: h, fin: fin });
+          res.conteo.sinDupla += dur;
         }
       }
     });
@@ -688,12 +722,13 @@ var Motor = (function () {
     });
     // Si el reemplazo de una TONS ausente no alcanza el mínimo, las horas que absorbía vuelven a su odontólogo/a.
     // Turno vespertino: si la TONS falta de 17:00 a 20:00 (o desde las 15:00 o 16:00), se pide reemplazo aunque sean 3 o 4 horas.
+    var durDe = function (lista) { return lista.reduce(function (s, c) { return s + (c.fin - c.h); }, 0); };
     var vespertino = function (lista) {
-      var hs = lista.map(function (c) { return c.h; });
-      return HORAS_VESPERTINO.every(function (h) { return hs.indexOf(h) >= 0; });
+      var ini = HORAS_VESPERTINO[0], fin = HORAS_VESPERTINO[HORAS_VESPERTINO.length - 1] + 1;
+      return durDe(lista.filter(function (c) { return c.h >= ini && c.h < fin; })) >= fin - ini - 1e-9;
     };
     var alcanza = function (lista) {
-      return lista.length >= HORAS_REEMPLAZO || vespertino(lista) || lista.some(function (c) { return c.forzar || c.vespPC; });
+      return durDe(lista) >= HORAS_REEMPLAZO - 1e-9 || vespertino(lista) || lista.some(function (c) { return c.forzar || c.vespPC; });
     };
     Object.keys(grupos).forEach(function (g) {
       if (alcanza(grupos[g])) return;
@@ -705,7 +740,7 @@ var Motor = (function () {
       // Se pide reemplazo con 5 horas o más, cuando falta en todo el turno vespertino,
       // o cuando quien falta avisó que no devolverá las horas.
       var pide = alcanza(grupos[g]);
-      var turnoVesp = pide && grupos[g].length < HORAS_REEMPLAZO && !grupos[g].some(function (c) { return c.forzar; }) &&
+      var turnoVesp = pide && durDe(grupos[g]) < HORAS_REEMPLAZO - 1e-9 && !grupos[g].some(function (c) { return c.forzar; }) &&
         (vespertino(grupos[g]) || grupos[g].some(function (c) { return c.vespPC; }));
       grupos[g].forEach(function (c) {
         if (!pide) { c.accion = 'bloqueo'; c.sugerencia = c.sugBloqueo; c.absorbida = false; c.grupoR = ''; c.ausente = ''; return; }
@@ -735,16 +770,17 @@ var Motor = (function () {
     res.deudaPraps = {};
     ix.activos.forEach(function (p) {
       if (!esPraps(ix, p.nombre)) return;
-      var hs = porHora.filter(function (P) {
+      var bs = porHora.filter(function (P) {
         var a = P.st[p.nombre];
         return !P.cerrado && a && a.evento && TIPOS[a.evento.tipo] && TIPOS[a.evento.tipo].pideReemplazo;
-      }).map(function (P) { return P.h; });
-      if (!hs.length) return;
-      res.deudaPraps[p.nombre] = hs.length;
-      var n = hs.length, txt = n + (n === 1 ? ' hora' : ' horas');
+      });
+      if (!bs.length) return;
+      var hs = bs.map(function (P) { return P.h; }), finD = bs[bs.length - 1].fin;
+      var n = bs.reduce(function (s, P) { return s + P.dur; }, 0), txt = textoHoras(n);
+      res.deudaPraps[p.nombre] = n;
       res.alertas.push({ nivel: 'ambar', clave: 'deuda|' + p.nombre, texto: corto(ix, p.nombre) + ': ' + txt + ' de permiso sin reemplazo registrado',
         sugerencia: 'Si no se consigue reemplazo, deberá devolver ' + (n === 1 ? 'esta hora' : 'estas ' + txt) + ' (contrato a honorarios). Quedan como horas por devolver en Saldos.',
-        desde: hs[0], hasta: hs[hs.length - 1] + 1, horas: n, rango: rango(hs[0], hs[hs.length - 1] + 1), accion: 'deuda', cargo: '', afectado: corto(ix, p.nombre),
+        desde: hs[0], hasta: finD, horas: n, rango: rango(hs[0], finD), accion: 'deuda', cargo: '', afectado: corto(ix, p.nombre),
         tons: '', box: '', causa: '', apoyoTxt: '', grupoR: '', absorbida: false, ausente: p.nombre, nombres: [p.nombre] });
     });
     // Vespertino per cápita y sábado (no PRAPS): si falta la dupla completa (odontólogo/a y su TONS) no queda nadie en el
@@ -760,12 +796,12 @@ var Motor = (function () {
         if (!b || b.act !== 'AUS' || b.base !== 'CLI') return;
         if (seccionDe(ix, [o.nombre, t], wd, P.h) !== 'Vespertino') return;
         var k = o.nombre + '|' + t;
-        (duplasAus[k] = duplasAus[k] || { od: o.nombre, tons: t, hs: [], causaOd: a.etiqueta, causaT: b.etiqueta }).hs.push(P.h);
+        (duplasAus[k] = duplasAus[k] || { od: o.nombre, tons: t, hs: [], causaOd: a.etiqueta, causaT: b.etiqueta }).hs.push({ h: P.h, fin: P.fin });
       });
     });
     Object.keys(duplasAus).forEach(function (k) {
       var x = duplasAus[k], tramos = [];
-      x.hs.forEach(function (h) { var u = tramos[tramos.length - 1]; if (u && u.hasta === h) u.hasta = h + 1; else tramos.push({ desde: h, hasta: h + 1 }); });
+      x.hs.forEach(function (b) { var u = tramos[tramos.length - 1]; if (u && u.hasta === b.h) u.hasta = b.fin; else tramos.push({ desde: b.h, hasta: b.fin }); });
       var causa = x.causaOd === x.causaT ? x.causaOd : x.causaOd + ' / ' + x.causaT;
       var turno = wd === 5 ? 'del sábado' : 'vespertino';
       tramos.forEach(function (t) {
@@ -783,10 +819,12 @@ var Motor = (function () {
 
     // horas de apoyo disponibles
     ix.apoyo.forEach(function (p) {
-      var hs = porHora.filter(function (P) { return !P.cerrado && P.apoyo.indexOf(p.nombre) >= 0; }).map(function (P) { return P.h; });
+      var bs = porHora.filter(function (P) { return !P.cerrado && P.apoyo.indexOf(p.nombre) >= 0; });
+      var hs = bs.map(function (P) { return P.h; });
       var enBrecha = hs.filter(function (h) { return crudas.some(function (c) { return c.nivel === 'roja' && c.h === h && c.clave.indexOf('sin|') === 0; }); });
       var aus = porHora.filter(function (P) { var a = P.st[p.nombre]; return a && a.evento && a.base === 'DIS' && a.act !== 'CIE'; }).map(function (P) { return P.st[p.nombre].etiqueta; });
-      res.apoyo.push({ nombre: p.nombre, corto: p.corto || p.nombre, horas: hs, enBrecha: enBrecha, ausencia: aus.length ? aus[0] : '' });
+      res.apoyo.push({ nombre: p.nombre, corto: p.corto || p.nombre, horas: hs, fin: bs.length ? bs[bs.length - 1].fin : 0,
+                       total: bs.reduce(function (s, P) { return s + P.dur; }, 0), enBrecha: enBrecha, ausencia: aus.length ? aus[0] : '' });
     });
     return res;
   }
@@ -804,14 +842,15 @@ var Motor = (function () {
     var out = [];
     Object.keys(grupos).forEach(function (k) {
       var lista = grupos[k].sort(function (a, b) { return a.h - b.h; });
-      var ini = lista[0], prev = lista[0].h;
+      var finDe = function (c) { return c.fin === undefined ? c.h + 1 : c.fin; };
+      var ini = lista[0], prev = finDe(lista[0]);
       for (var i = 1; i <= lista.length; i++) {
         var c = lista[i];
-        if (c && c.h === prev + 1) { prev = c.h; continue; }
-        out.push({ nivel: ini.nivel, clave: ini.clave, texto: ini.texto, sugerencia: ini.sugerencia, desde: ini.h, hasta: prev + 1, horas: prev + 1 - ini.h, rango: rango(ini.h, prev + 1), apoyo: ini.apoyo,
+        if (c && c.h === prev) { prev = finDe(c); continue; }
+        out.push({ nivel: ini.nivel, clave: ini.clave, texto: ini.texto, sugerencia: ini.sugerencia, desde: ini.h, hasta: prev, horas: prev - ini.h, rango: rango(ini.h, prev), apoyo: ini.apoyo,
                    accion: ini.accion || '', cargo: ini.cargo || '', afectado: ini.afectado || '', tons: ini.tons || '', box: ini.box || '', causa: ini.causa || '', apoyoTxt: ini.apoyoTxt || '',
                    grupoR: ini.grupoR || '', absorbida: !!ini.absorbida, ausente: ini.ausente || '', nombres: ini.nombres || [] });
-        if (c) { ini = c; prev = c.h; }
+        if (c) { ini = c; prev = finDe(c); }
       }
     });
     return out.sort(function (a, b) { return orden[a.nivel] - orden[b.nivel] || a.desde - b.desde; });
@@ -868,7 +907,7 @@ var Motor = (function () {
       graves.forEach(function (a) { resumen.alertas.push({ fecha: D.fecha, dia: D.dia, nivel: a.nivel, texto: a.texto, sugerencia: a.sugerencia, rango: a.rango, horas: a.horas }); });
       D.apoyo.forEach(function (ap) {
         var r = resumen.apoyo[ap.nombre] = resumen.apoyo[ap.nombre] || { nombre: ap.nombre, corto: ap.corto, horas: 0, dias: [], enBrecha: 0, ausencias: [] };
-        if (ap.horas.length) { r.horas += ap.horas.length; r.dias.push({ fecha: D.fecha, desde: ap.horas[0], hasta: ap.horas[ap.horas.length - 1] + 1, enBrecha: ap.enBrecha.length }); }
+        if (ap.horas.length) { r.horas += ap.total; r.dias.push({ fecha: D.fecha, desde: ap.horas[0], hasta: ap.fin, enBrecha: ap.enBrecha.length }); }
         r.enBrecha += ap.enBrecha.length;
         if (ap.ausencia) r.ausencias.push({ fecha: D.fecha, motivo: ap.ausencia });
       });
@@ -945,11 +984,14 @@ var Motor = (function () {
         return extra ? v === 'Fuera de jornada' : v !== 'Colación' && v !== 'Fuera de jornada';
       });
       if (!prog.length) return;
-      var cub = prog.filter(function (h) { return porFecha[f].some(function (ev) { return eventoEnHora(ev, h); }); });
-      if (!cub.length) return;
+      // Horas cubiertas, con fracción si el evento empieza o termina a media hora (por ejemplo, 16:30).
+      var cub = prog.reduce(function (s, h) {
+        return s + Math.min(1, porFecha[f].reduce(function (m, ev) { return m + cubreHora(ev, h); }, 0));
+      }, 0);
+      if (!cub) return;
       var desc = [];
       porFecha[f].forEach(function (e) { var t = e.obs || e.tipo; if (desc.indexOf(t) < 0) desc.push(t); });
-      out.push({ fecha: f, dias: cub.length === prog.length ? 1 : 0.5, horas: cub.length, desc: desc.join(', '),
+      out.push({ fecha: f, dias: cub >= prog.length - 1e-9 ? 1 : 0.5, horas: cub, desc: desc.join(', '),
                  ids: porFecha[f].map(function (e) { return e.id; }) });
     });
     return out;
@@ -972,14 +1014,15 @@ var Motor = (function () {
     Object.keys(porFecha).sort().forEach(function (f) {
       if (cerradoEnFecha(datos, f)) return;
       var fila = ((datos.estandar || {})[persona] || {})[DIAS[diaSemana(aFecha(f))]] || [];
-      var sin = HORAS.filter(function (h, i) {
+      var sin = HORAS.reduce(function (s, h, i) {
         var v = fila[i] || 'Fuera de jornada';
-        if (v === 'Colación' || v === 'Fuera de jornada') return false;
-        if (!porFecha[f].some(function (ev) { return eventoEnHora(ev, h); })) return false;
-        return !ree.some(function (e) { return eventoEnFecha(e, f) && eventoEnHora(e, h); });
-      });
-      if (!sin.length) return;
-      out.push({ fecha: f, dias: 0, horas: sin.length, desc: porFecha[f][0].tipo + ' · sin reemplazo', sinReemplazo: true,
+        if (v === 'Colación' || v === 'Fuera de jornada') return s;
+        var perm = Math.min(1, porFecha[f].reduce(function (m, ev) { return m + cubreHora(ev, h); }, 0));
+        var cub = Math.min(1, ree.filter(function (e) { return eventoEnFecha(e, f); }).reduce(function (m, e) { return m + cubreHora(e, h); }, 0));
+        return s + Math.max(0, perm - cub);
+      }, 0);
+      if (!sin) return;
+      out.push({ fecha: f, dias: 0, horas: sin, desc: porFecha[f][0].tipo + ' · sin reemplazo', sinReemplazo: true,
                  ids: porFecha[f].map(function (e) { return e.id; }) });
     });
     return out;
@@ -1092,7 +1135,7 @@ var Motor = (function () {
   }
 
   return {
-    TIPOS: TIPOS, ACT: ACT, DIAS: DIAS, HORAS: HORAS, DIAS_ATENCION: DIAS_ATENCION, TODOS: TODOS, REPETICIONES: REPETICIONES,
+    TIPOS: TIPOS, ACT: ACT, DIAS: DIAS, HORAS: HORAS, bloquesDia: bloquesDia, textoHoras: textoHoras, DIAS_ATENCION: DIAS_ATENCION, TODOS: TODOS, REPETICIONES: REPETICIONES,
     listaDuplas: listaDuplas, textoFechas: textoFechas, SECCIONES: ['Diurno', 'Vespertino', 'PRAPS'], boxEn: boxEn, leerBox: leerBox, vigente: vigente, actual: actual,
     ROLES: { ODONTO: ROL_ODONTO, TONS: ROL_TONS, APOYO: ROL_APOYO },
     aFecha: aFecha, aTexto: aTexto, diaSemana: diaSemana, hhmm: hhmm, rango: rango,
@@ -1208,8 +1251,8 @@ if (typeof module !== 'undefined') module.exports = Motor;
       var s = estadoHora(H, n);
       if (!s.t) return;
       var u = out[out.length - 1];
-      if (u && u.t === s.t && u.c === s.c && u.hasta === H.h) u.hasta = H.h + 1;
-      else out.push({ t: s.t, c: s.c, tipo: s.tipo, desde: H.h, hasta: H.h + 1 });
+      if (u && u.t === s.t && u.c === s.c && u.hasta === H.h) u.hasta = H.fin;
+      else out.push({ t: s.t, c: s.c, tipo: s.tipo, desde: H.h, hasta: H.fin });
     });
     return out;
   }
@@ -1301,7 +1344,7 @@ if (typeof module !== 'undefined') module.exports = Motor;
       return out;
     });
     D.horas.forEach(function (H, r) {
-      h += '<tr><td class="hora">' + Motor.rango(H.h, H.h + 1) + '</td>';
+      h += '<tr><td class="hora">' + Motor.rango(H.h, H.fin) + '</td>';
       cols.forEach(function (col, c) {
         if (!sp[c][r]) return;
         var x = col[r], rs = sp[c][r] > 1 ? ' rowspan="' + sp[c][r] + '"' : '';
@@ -1319,7 +1362,7 @@ if (typeof module !== 'undefined') module.exports = Motor;
     var t = Motor.TIPOS[ev.tipo] || {};
     if (t.efecto === 'REE') return ev.acompanaA + ' reemplaza a ' + q;
     if (t.efecto === 'CIE') return ev.obs || ev.tipo;
-    return (ev.obs || ev.tipo) + ' · ' + q + ' · ' + (ev.hIni ? ev.hIni + '–' + ev.hFin : 'jornada completa');
+    return (ev.obs || ev.tipo) + ' · ' + q + ' · ' + (ev.hIni ? ev.hIni + '–' + ev.hFin : 'jornada completa') + (ev.box ? ' · en ' + ev.box : '');
   }
   function abrirDia(f) {
     var I = infoDia(f), d = Motor.aFecha(f);
