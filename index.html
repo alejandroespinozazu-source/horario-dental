@@ -385,7 +385,9 @@ var Motor = (function () {
           if (!t || t.efecto === 'COB' || t.efecto === 'REE' || t.efecto === 'EXT' || !eventoEnHora(e, h) || !afectaA(e, p.nombre)) return;
           if (a.base === 'FUE') return;
           if (a.base === 'COL' && jornadaCompleta(e) && t.efecto !== 'AUS' && t.efecto !== 'CIE') return;
-          if (t.efecto !== 'AUS' && t.efecto !== 'CIE') delCargo = e;
+          // Reuniones, censos, bloqueos y otras actividades del cargo también las cumple quien reemplaza;
+          // la bodega es función propia de la titular.
+          if (t.efecto !== 'AUS' && t.efecto !== 'CIE' && t.efecto !== 'BOD') delCargo = e;
           if (a.act === 'AUS' && t.efecto !== 'AUS' && t.efecto !== 'CIE') return; // quien está ausente no asiste a la reunión
           a.act = t.efecto;
           a.evento = e;
@@ -400,7 +402,12 @@ var Motor = (function () {
           a.reemplazo = e.acompanaA;
           if (a.act === 'CIE') return;
           if (delCargo) { a.act = TIPOS[delCargo.tipo].efecto; a.evento = delCargo; a.etiqueta = delCargo.obs || delCargo.tipo; }
-          else { a.act = a.base; a.evento = null; a.etiqueta = ETIQUETA[a.base]; }
+          else {
+            // Las funciones extra clínicas del horario estándar de una TONS (administrativo, bodega) son de la titular:
+            // quien la reemplaza hace clínica en esas horas.
+            if (/tons/i.test(p.rol || '') && (a.base === 'ADM' || a.base === 'BOD')) a.base = 'CLI';
+            a.act = a.base; a.evento = null; a.etiqueta = ETIQUETA[a.base];
+          }
         });
         st[p.nombre] = a;
       });
